@@ -12,11 +12,11 @@
 
 **Language/Version**: Java + Spring Boot (버전은 코드 저장소에서 정함)
 
-**Primary Dependencies**: Spring Security(인증·인가·CSRF·보안 헤더), Spring Mail(JavaMailSender, Gmail SMTP), jsoup(본문 걸러내기), 마크다운 → HTML 변환기, ShedLock, Cloudflare Turnstile(사람 확인), Toast UI Editor(화면), Flyway(DB 변경 관리, 추천)
+**Primary Dependencies**: Spring Security(인증·인가·CSRF·보안 헤더), Spring Mail(JavaMailSender, Gmail SMTP), jsoup(본문 걸러내기), 마크다운 → HTML 변환기, ShedLock, Cloudflare Turnstile(사람 확인), Toast UI Editor(화면), Flyway(DB 변경 관리, 추천), Spring Boot Actuator(상태 확인, OPS-04)
 
 **Storage**: MySQL 8 (InnoDB, utf8mb4, FULLTEXT + ngram). 이미지는 서버 디스크(`FileStorage` 뒤, 이중화 때 S3)
 
-**Testing**: JUnit + Spring Boot Test (코드 저장소에서 정함). 권한(SEC-07)과 04:00 배치는 통합 테스트로 확인
+**Testing**: JUnit + Spring Boot Test (코드 저장소에서 정함). 권한(SEC-07)과 04:00 배치는 통합 테스트로 확인. PR과 main 푸시마다 GitHub Actions로 빌드·테스트(OPS-05)
 
 **Target Platform**: Linux 서버 1대(AWS), 이중화 때 ALB + 2대 이상
 
@@ -26,7 +26,7 @@
 
 **Constraints**: 5초 넘는 요청은 중단하고 다시 시도 안내. 서버 메모리에 상태를 두지 않음(IP 요청 제한만 예외). 시간대는 Asia/Seoul. 1차에 Redis 없음
 
-**Scale/Scope**: 1차 서버 1대, 테이블 33개, 요구사항 USR 8 · BLG 13 · SOC 6 · BRD 11 · ADM 8 · SEC 13 · SCL 3
+**Scale/Scope**: 1차 서버 1대, 테이블 33개, 요구사항 USR 8 · BLG 13 · SOC 6 · BRD 11 · ADM 8 · SEC 13 · SCL 3 · OPS 7
 
 ## Constitution Check
 
@@ -41,7 +41,7 @@
 | III. 개인정보는 필요한 만큼, 서버에서 가린다 | 수집 항목 4.6, 서버 마스킹 4.4, 관리자 전체 보기 기록(ADM-06), 30일 삭제 배치 4.5, 블랙리스트 해시 | ✅ |
 | IV. 서버를 늘려도 코드를 고치지 않는다 | 상태는 DB(SCL-01), `FileStorage`(SCL-02), ShedLock(SCL-03), 프록시 헤더는 설정으로 | ✅ |
 | V. 단순한 것을 고른다 | 폴링 알림, 볼 때마다 피드, DB 조회 기록, 서버 디스크 이미지, Gmail SMTP | ✅ |
-| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-100. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07, 팀원 검토까지 모두 해결) | ✅ |
+| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-107. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07, 팀원 검토까지 모두 해결) | ✅ |
 
 위반으로 정당화할 복잡도는 없다(Complexity Tracking 비움).
 
@@ -53,11 +53,11 @@
 specs/001-main-blog/
 ├── spec.md              # 요구사항 (요구사항분석서 1·2를 Spec Kit 형식으로)
 ├── plan.md              # 이 파일
-├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-100
+├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-107
 ├── data-model.md        # 테이블 33개, 상태 전이, 검증 규칙
 ├── quickstart.md        # (아직 없음) 코드 저장소가 생기면 실행·검증 절차
 ├── contracts/           # (아직 없음) API 명세
-└── tasks.md             # 구현 작업 134개 (/speckit-tasks)
+└── tasks.md             # 구현 작업 141개 (/speckit-tasks)
 
 docs/
 ├── 01-requirements/     # 요구사항분석서 1·2 PDF (근거 자료)

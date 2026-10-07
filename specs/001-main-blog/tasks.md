@@ -9,7 +9,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md. `contracts/`(API 명세)와 `quickstart.md`는 아직 없어서 API 주소는 각 작업에 직접 적었습니다.
 
-**Tests**: 스펙이 테스트를 따로 요구하지 않아 기능별 테스트 작업은 넣지 않았습니다. plan.md가 통합 테스트로 확인하라고 정한 두 가지(블로그별 권한 SEC-07, 04:00 배치)만 테스트 작업으로 넣었습니다.
+**Tests**: 스펙이 테스트를 따로 요구하지 않아 기능별 테스트 작업은 넣지 않았습니다. plan.md가 통합 테스트로 확인하라고 정한 두 가지(블로그별 권한 SEC-07, 04:00 배치)와 성공 기준 SC-009의 오류 응답 점검(T141)만 테스트 작업으로 넣었습니다.
 
 **Organization**: 사용자 스토리(US1~US9)별로 나눠 스토리마다 따로 만들고 확인할 수 있게 했습니다.
 
@@ -38,6 +38,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T003 [P] `src/main/resources/application.yml`에 MySQL 연결(환경변수), `spring.jpa.hibernate.ddl-auto=validate`, `spring.jackson.time-zone=Asia/Seoul`, JVM 기본 시간대 Asia/Seoul, `blog.limit.public=${BLOG_LIMIT_PUBLIC:3}`, `blog.limit.private=5`, 메일(Gmail SMTP) 설정, Turnstile 키, JWT 비밀키를 환경변수로 받게 적는다
 - [ ] T004 [P] 포맷·린트 설정(예: Spotless + google-java-format)을 `build.gradle`에 추가한다
 - [ ] T005 [P] 로컬 MySQL 8 실행용 `docker-compose.yml`(utf8mb4, ngram 기본 설정, 시간대 Asia/Seoul)을 만든다
+- [ ] T135 [P] PR과 main 푸시마다 `./gradlew build`(코드 모양 검사, 테스트)를 돌리는 GitHub Actions를 `.github/workflows/ci.yml`에 만든다(JDK 21, Gradle 캐시). 저장소 관리자가 GitHub 설정의 main 브랜치 보호 규칙에서 이 검사를 merge 필수로 켠다 (OPS-05, D-105)
 
 ---
 
@@ -49,7 +50,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 
 - [ ] T006 이 문서 저장소의 `docs/02-database/schema/erd_tables.sql`을 그대로 옮겨 `src/main/resources/db/migration/V1__init.sql`을 만든다(테이블 33개, 관계 65개)
 - [ ] T007 `docs/02-database/schema/add_indexes.sql`을 옮겨 `src/main/resources/db/migration/V2__indexes.sql`을 만들고, 블로그 이름·소개와 글 제목의 FULLTEXT ngram 인덱스가 있는지 확인한다(BRD-08)
-- [ ] T008 [P] 공통 응답·오류 형식과 `@RestControllerAdvice` 예외 처리를 `src/main/java/com/blog/common/error/GlobalExceptionHandler.java`에 만든다(검증 실패 400, 권한 없음 403, 없음 404, 제한 초과 429)
+- [ ] T008 [P] 공통 응답·오류 형식과 `@RestControllerAdvice` 예외 처리를 `src/main/java/com/blog/common/error/GlobalExceptionHandler.java`에 만든다(검증 실패 400, 권한 없음 403, 없음 404, 제한 초과 429). 오류 본문은 모두 `{code, message}` 형식이고 스택 트레이스·SQL·클래스 이름·서버 경로를 담지 않으며(`server.error.include-stacktrace=never`), 500에는 로그에서 찾을 오류 번호(요청 ID)를 담는다 (OPS-02, D-102)
 - [ ] T009 [P] 요청 처리 5초 제한(서버 쿼리 타임아웃 + `spring.mvc.async.request-timeout`)과 시간 초과 시 "다시 시도" 응답을 `src/main/java/com/blog/common/config/TimeoutConfig.java`에 둔다(D-48)
 - [ ] T010 [P] `users` 엔티티를 `src/main/java/com/blog/auth/domain/User.java`에 만든다: `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN, `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`, `notification_keep_days` 30/7, 약관·개인정보 동의 시각, `suspended_until`(영구는 9999-12-31)
 - [ ] T011 [P] `blogs` 엔티티를 `src/main/java/com/blog/blog/domain/Blog.java`에 만든다: `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`, `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at`
@@ -64,11 +65,14 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T020 [P] 해시 도구(SHA-256 + 서버 비밀값)를 `src/main/java/com/blog/common/crypto/HashUtil.java`에 만든다. 인증번호·토큰·블랙리스트 개인정보에 쓴다
 - [ ] T021 [P] `FileStorage` 인터페이스와 디스크 구현을 `src/main/java/com/blog/common/storage/FileStorage.java`, `LocalDiskFileStorage.java`에 만든다. 저장 이름은 UUID (SCL-02)
 - [ ] T022 [P] IP별 요청 제한(1차는 메모리, 이중화 때 Redis로 바꿀 수 있게 인터페이스 뒤)을 `src/main/java/com/blog/common/ratelimit/RateLimiter.java`, `InMemoryRateLimiter.java`에 만든다. 프록시 헤더(X-Forwarded-For) 신뢰 여부는 설정으로 (SCL-01)
-- [ ] T023 [P] 메일 발송을 `src/main/java/com/blog/common/mail/MailService.java`에 만든다(JavaMailSender, Gmail SMTP, D-69)
+- [ ] T023 [P] 메일 발송을 `src/main/java/com/blog/common/mail/MailService.java`에 만든다(JavaMailSender, Gmail SMTP, D-69). 발송이 실패하면(Gmail 오류, 5초 시간 초과, 하루 한도 초과) 자동으로 다시 보내지 않고 오류 로그를 남긴 뒤 "메일을 보내지 못했어요. 잠시 뒤 다시 시도해 주세요" 오류를 돌려준다. 이 문구는 가입된 이메일인지와 상관없이 같고, 보내지 못한 인증번호는 바로 무효로 하며 1분 재발송 제한에 세지 않는다 (OPS-07, D-107)
 - [ ] T024 [P] ShedLock 설정(`@EnableSchedulerLock`, JdbcTemplateLockProvider, `shedlock` 테이블)을 `src/main/java/com/blog/common/config/SchedulerConfig.java`에 만든다 (SCL-03)
 - [ ] T025 [P] `notifications`, `notification_settings` 엔티티를 `src/main/java/com/blog/social/domain/Notification.java`, `NotificationSetting.java`에 만든다: `tab` COMMENT/LIKE/FOLLOW/BLOG/OPERATION, `type`, 대상, `message`, `is_read`. 설정은 끌 수 있는 알림 종류만 행을 둔다
 - [ ] T026 알림 만들기 공통 서비스를 `src/main/java/com/blog/social/service/NotificationService.java`에 만든다: spec.md 알림 종류 표의 종류·탭·끌 수 있음 여부를 enum으로 두고, 끈 종류는 만들지 않으며 끌 수 없는 종류는 항상 만든다
 - [ ] T027 [P] 공통 화면 틀을 만든다: `src/main/resources/static/js/api.js`(모든 요청에 `X-XSRF-TOKEN` 헤더, 5초 넘으면 중단하고 다시 시도 안내, 401이면 토큰 재발급 시도), `static/js/layout.js`(메인으로 가는 상단 메뉴, 로그인 상태, 종 아이콘, 모든 화면 아래 개인정보 처리방침 링크), `static/css/common.css`(PC·모바일 반응형)
+- [ ] T136 [P] 오류 안내 화면을 `src/main/resources/static/error/404.html`, `403.html`, `500.html`에 만든다: 내부 정보 없이 안내 문구와 메인으로 가기 버튼, 500은 오류 번호 표시 (OPS-02, D-102)
+- [ ] T137 로그 설정을 `src/main/resources/logback-spring.xml`에 만든다: 서버 파일에 날짜별로, 30일 지나면 자동 삭제, 모든 줄에 요청 ID(`src/main/java/com/blog/common/logging/RequestIdFilter.java`가 MDC에 넣음). 로그인 실패(가린 이메일, IP)·권한 거부(403)·요청 제한 초과(429)는 `src/main/java/com/blog/common/logging/SecurityEventLogger.java`로 남기고 이메일·전화번호는 Masking(T019)으로 가린다. 비밀번호·JWT·Refresh Token·인증번호·쿠키·CSRF 토큰은 로그에 넣지 않는다 (OPS-03, D-103)
+- [ ] T138 상태 확인 주소를 연다: `build.gradle`에 spring-boot-starter-actuator를 추가하고, `src/main/resources/application.yml`에 `management.endpoints.web.exposure.include=health`, `management.endpoint.health.show-details=never`를 적고, `src/main/java/com/blog/common/config/SecurityConfig.java`에서 `/actuator/health`만 비회원에게 연다(DB 연결 포함 UP/DOWN만) (OPS-04, D-104)
 
 **Checkpoint**: 기반 완료. 이제 사용자 스토리를 시작할 수 있다
 
@@ -305,6 +309,9 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T132 [P] 서버 2대 대비 점검: 이미지 저장소·IP 요청 제한 저장소·프록시 헤더가 설정만으로 바뀌는지 `src/main/resources/application.yml`에서 확인한다 (SC-008, SCL-01~03)
 - [ ] T133 [P] 개인정보 처리방침 화면을 `src/main/resources/static/privacy.html`에 만든다(4.6 표 기준, 판매·제공 없음)
 - [ ] T134 이 문서 저장소에 `specs/001-main-blog/quickstart.md`(실행·검증 절차)와 `specs/001-main-blog/contracts/`(위 API 주소 정리)를 만들고 `/speckit-analyze`로 스펙·계획·작업이 맞는지 확인한다
+- [ ] T139 DB 백업을 만든다: `ops/backup/db-backup.sh`(mysqldump `--single-transaction` 전체 백업, 매일 03:00 Asia/Seoul cron, 서버 밖 저장소로 복사, 7일 지난 파일 삭제, 운영자만 읽기)와 복구 절차 `ops/backup/RESTORE.md`. 전날 백업으로 빈 DB를 복구해 `/actuator/health`가 UP인지 확인한다 (OPS-01, SC-010, D-101)
+- [ ] T140 [P] 지원 브라우저 확인: 가입, 로그인, 블로그 만들기, 글쓰기(Toast UI Editor), 글 상세, 알림 화면을 Windows·Mac Chrome, Mac Safari, Android Chrome, iPhone Safari 최신 버전에서 확인하고 깨지는 곳을 고친다 (OPS-06, D-106)
+- [ ] T141 [P] 오류·로그 점검: 없는 주소, 잘못된 입력, 일부러 낸 서버 오류의 응답과 화면에 스택 트레이스·SQL이 없는지 `src/test/java/com/blog/common/ErrorResponseTest.java`로 확인하고, 가입·로그인 실패·비밀번호 재설정을 한 번씩 한 뒤 로그 파일에 비밀번호·토큰·인증번호가 없는지 검색한다 (OPS-02, OPS-03, SC-009)
 
 ---
 
@@ -346,8 +353,8 @@ Setup → Foundational → US1 → US2 → US3 ─┬─ US4 ─┐
 
 ### Parallel Opportunities
 
-- Setup: T003, T004, T005
-- Foundational: T008~T013, T019~T025, T027 (T014는 T010~T013 뒤, T015~T018은 T014 뒤, T026은 T025 뒤)
+- Setup: T003, T004, T005, T135
+- Foundational: T008~T013, T019~T025, T027 , T136 (T014는 T010~T013 뒤, T015~T018은 T014 뒤, T026은 T025 뒤, T137은 T019 뒤, T138은 T016 뒤)
 - Foundational이 끝나면 US1과 함께 US6의 T095를 시작할 수 있고, US3이 끝나면 US4·US5·US7을 사람별로 나눠 동시에 할 수 있다
 - 각 스토리의 `[P]` 엔티티 작업과 `[P]` 화면 작업
 
@@ -402,7 +409,8 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 
 ## Notes
 
-- 작업 수 134개 (Setup 5, Foundational 22, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 8)
-- 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
+- 작업 수 141개 (Setup 6, Foundational 25, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 11)
+- T135~T141은 운영 요구사항(OPS, D-101~D-107)을 넣으며 뒤에 붙인 번호라 단계 안의 번호 순서와 실행 순서가 다를 수 있다. 단계는 각 작업이 놓인 Phase를 따른다
+- 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL, OPS)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
 - 테이블·컬럼을 바꿔야 하면 코드보다 먼저 이 저장소의 `erd_tables.sql`과 관련 파일을 고친다(CLAUDE.md)
 - 작업 하나나 묶음마다 커밋하고, Checkpoint에서 스토리를 따로 확인한다
