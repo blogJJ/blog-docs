@@ -1,5 +1,17 @@
 # 블로그 플랫폼 문서
 
+요구사항과 설계는 [GitHub Spec Kit](https://github.com/github/spec-kit) 형식으로 정리되어 있습니다. 구현할 때는 아래 Spec Kit 문서를 먼저 보고, 이 폴더의 원본은 근거 자료로 봅니다.
+
+| 문서 | 내용 |
+| --- | --- |
+| [constitution.md](../.specify/memory/constitution.md) | 모든 스펙·구현이 지킬 원칙 (보안, 블로그별 역할, 개인정보, 이중화 대비, 단순함, 결정 기록) |
+| [spec.md](../specs/001-main-blog/spec.md) | 메인블로그 요구사항: 사용자 스토리, 기능·비기능 요구사항, 성공 기준, 원본 간 차이 |
+| [plan.md](../specs/001-main-blog/plan.md) | 기술 맥락, 원칙 점검, 구조, 다음 단계 |
+| [research.md](../specs/001-main-blog/research.md) | 구현 방식을 고른 이유, 이중화 기술 후보, 결정 기록 D-01~D-82 |
+| [data-model.md](../specs/001-main-blog/data-model.md) | 테이블 32개를 요구사항과 연결, 상태 전이, 검증 규칙 |
+
+## 원본 문서
+
 | 폴더 | 내용 |
 | --- | --- |
 | [01-requirements](01-requirements/) | 요구사항분석서 (기본 요구사항, 세부 정책 결정 기록) |
