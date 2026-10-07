@@ -2,7 +2,7 @@
 
 **Feature**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md)
 
-기준은 [erd_tables.sql](../../docs/02-database/schema/erd_tables.sql)(MySQL 8, InnoDB, utf8mb4)이고, 같은 내용을 표와 관계도로 정리한 원문은 [요구사항분석서 3 · DB 설계(ERD)](../../docs/02-database/요구사항분석서_3_DB설계_ERD.pdf)입니다(테이블 32개, 관계 61개, D-84). 이 문서는 테이블을 요구사항과 연결하고 상태 전이와 검증 규칙을 정리합니다. 컬럼 하나하나의 정의와 한글 이름은 SQL 파일과 [erdcloud_names.md](../../docs/02-database/erdcloud/erdcloud_names.md)를 보세요. 조회용 인덱스는 [add_indexes.sql](../../docs/02-database/schema/add_indexes.sql)에 있습니다(나중에 추가).
+기준은 [erd_tables.sql](../../docs/02-database/schema/erd_tables.sql)(MySQL 8, InnoDB, utf8mb4)이고, 같은 내용을 표와 관계도로 정리한 원문은 [요구사항분석서 3 · DB 설계(ERD)](../../docs/02-database/요구사항분석서_3_DB설계_ERD.pdf)입니다(테이블 33개, 관계 65개, D-84, D-99). 이 문서는 테이블을 요구사항과 연결하고 상태 전이와 검증 규칙을 정리합니다. 컬럼 하나하나의 정의와 한글 이름은 SQL 파일과 [erdcloud_names.md](../../docs/02-database/erdcloud/erdcloud_names.md)를 보세요. 조회용 인덱스는 [add_indexes.sql](../../docs/02-database/schema/add_indexes.sql)에 있습니다(나중에 추가).
 
 테이블이나 컬럼을 바꾸면 `erd_tables.sql` → `erdcloud_import.sql` → `erdcloud_names.md` → 이 문서 순서로 같이 고칩니다.
 
@@ -14,13 +14,13 @@
 - 인증번호·토큰·블랙리스트 개인정보는 원문 대신 해시로 저장한다.
 - 개수 컬럼(`member_count`, `post_count`, `like_count` 등)은 정렬·표시용 캐시다.
 
-## 엔티티 목록 (32개)
+## 엔티티 목록 (33개)
 
 ### 회원·인증
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `users` | 회원 | USR-01~08, SEC-01~03 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 블로그 활동 불가, 메인 공지·관리만, D-90), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각 |
+| `users` | 회원 | USR-01~08, SEC-01~03, ADM-08 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 블로그 활동 불가, 메인 공지·관리만, D-90), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각, `suspended_until`(메인 관리자 계정 정지, 영구는 9999-12-31, D-99) |
 | `verification_codes` | 이메일 인증번호 | USR-02, USR-06 | 회원 번호 대신 `email` 기준. `purpose` SIGNUP(10분)/PASSWORD_RESET(30분), `code_hash`, `fail_count`(5번 무효), `verified_at`, `used_at`(1회용) |
 | `account_find_tokens` | 이메일 찾기 임시 토큰 | USR-08 | `token_hash`, 10분 만료 |
 | `refresh_tokens` | Refresh Token | SEC-04, USR-04 | `token_hash`, `remember_me`(14일/30분), `user_agent`, `revoked_at`(로그아웃·비밀번호 변경) |
@@ -45,9 +45,10 @@
 | --- | --- | --- | --- |
 | `member_sanctions` | 멤버 경고·정지·강제 퇴장 | BLG-13, 3.7 | `type` WARNING/SUSPENSION/KICK, `suspend_days` 3/14/30(영구 NULL), `ends_at`, `report_id`, `released_at`. 1년 보관 |
 | `owner_sanctions` | 블로그장 경고·권한 박탈 | ADM-07 | `type` WARNING/DEMOTION. 그 블로그에서 최근 1년 안의 경고가 3번이면 박탈(블로그별, D-97) |
+| `user_sanctions` | 계정 경고·프로필 초기화·정지 | ADM-08 | 메인 프로필 신고 처리 기록. `type` WARNING/PROFILE_RESET/SUSPENSION, `suspend_days` 3/14/30(영구 NULL), `ends_at`, `report_id`, `admin_id`, `released_at`. 정지 중인지는 `users.suspended_until`로 확인. 1년 보관 (D-99) |
 | `blog_blacklist` | 블로그 블랙리스트 | BLG-11 | `name_hash`, `email_hash`, `phone_hash`. 고치거나 지우지 않고 `released_at`으로만 해제 |
 | `blacklist_inquiries` | 블랙리스트 해제 문의 | BLG-12 | `name_match`, `phone_match`(서버 비교), `status` PENDING/RELEASED/REJECTED |
-| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN(블로그장 본인·블로그장 글·댓글 신고와 `blog_id`가 없는 메인 프로필 신고는 ADMIN, D-94, D-95), `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED |
+| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN(블로그장 본인·블로그장 글·댓글 신고, `blog_id`가 없는 메인 프로필 신고, 블로그장이 계정 정지 중인 블로그의 신고는 ADMIN, D-94, D-95, D-100), `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED/PROFILE_RESET/ACCOUNT_SUSPENDED |
 | `admin_action_logs` | 관리자 활동 기록 | ADM-06, SEC-09 | `action`(예: OWNER_WARN, CLOSE_BLOG, VIEW_PRIVATE_INFO), 대상, 사유. 1년 보관 |
 
 ### 게시판
@@ -133,7 +134,8 @@ ACTIVE ──탈퇴(운영 중·폐쇄 예정 블로그 없음)──▶ WITHDRA
 ```text
 PENDING ──블로그장 처리(handler_scope = BLOG_OWNER)──▶ NO_ISSUE | WARNED | SUSPENDED | KICKED
 PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED | OWNER_DEMOTED | BLOG_CLOSED
-                                                (메인 프로필 회원 신고는 NO_ISSUE | WARNED만, D-95)
+                                                메인 프로필 신고: NO_ISSUE | WARNED | PROFILE_RESET | ACCOUNT_SUSPENDED (D-99)
+                                                블로그장 정지 중인 블로그의 신고: NO_ISSUE | WARNED | SUSPENDED | KICKED (D-100)
 ```
 
 ## 검증 규칙 (서버에서 검사)

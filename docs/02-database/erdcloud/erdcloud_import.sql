@@ -9,6 +9,7 @@ CREATE TABLE `users` (
 	`bio`	VARCHAR(200)	NULL	COMMENT '소개',
 	`role`	ENUM('USER', 'ADMIN')	NOT NULL	DEFAULT 'USER'	COMMENT 'ADMIN = 메인 관리자 (블로그 활동은 못 함, D-90)',
 	`status`	ENUM('ACTIVE', 'WITHDRAWN')	NOT NULL	DEFAULT 'ACTIVE'	COMMENT '탈퇴하면 행을 지우지 않고 WITHDRAWN',
+	`suspended_until`	DATETIME	NULL	COMMENT '메인 관리자 계정 정지가 끝나는 시각 (ADM-08). 영구 정지는 9999-12-31. 정지 아니면 NULL',
 	`login_fail_count`	INT	NOT NULL	DEFAULT 0	COMMENT '연속 로그인 실패 횟수 (5회면 잠금, 3회부터 CAPTCHA)',
 	`locked_until`	DATETIME	NULL	COMMENT '로그인 잠금 풀리는 시각 (5분)',
 	`notification_keep_days`	TINYINT	NOT NULL	DEFAULT 30	COMMENT '알림 보관 일수 (30 또는 7)',
@@ -149,7 +150,7 @@ CREATE TABLE `member_sanctions` (
 	`ends_at`	DATETIME	NULL	COMMENT '정지 끝나는 시각',
 	`reason`	VARCHAR(500)	NOT NULL	COMMENT '사유',
 	`report_id`	BIGINT	NULL	COMMENT '신고를 처리하며 준 경우 그 신고',
-	`issued_by`	BIGINT	NOT NULL	COMMENT '조치한 블로그장·부블로그장',
+	`issued_by`	BIGINT	NOT NULL	COMMENT '조치한 블로그장·부블로그장 (블로그장 정지 중이면 메인 관리자, ADM-08)',
 	`released_at`	DATETIME	NULL	COMMENT '정지 해제 시각',
 	`released_by`	BIGINT	NULL	COMMENT '해제한 사람',
 	`created_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '만든 시각'
@@ -163,6 +164,20 @@ CREATE TABLE `owner_sanctions` (
 	`reason`	VARCHAR(500)	NOT NULL	COMMENT '사유',
 	`report_id`	BIGINT	NULL	COMMENT '신고를 처리하며 준 경우',
 	`admin_id`	BIGINT	NOT NULL	COMMENT '조치한 메인 관리자',
+	`created_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '만든 시각'
+);
+
+CREATE TABLE `user_sanctions` (
+	`id`	BIGINT	NOT NULL	COMMENT '번호',
+	`user_id`	BIGINT	NOT NULL	COMMENT '대상 회원',
+	`type`	ENUM('WARNING', 'PROFILE_RESET', 'SUSPENSION')	NOT NULL	COMMENT '경고 / 프로필 초기화 / 계정 정지',
+	`suspend_days`	SMALLINT	NULL	COMMENT '3, 14, 30. 영구는 NULL (정지일 때만)',
+	`ends_at`	DATETIME	NULL	COMMENT '정지 끝나는 시각',
+	`reason`	VARCHAR(500)	NOT NULL	COMMENT '사유',
+	`report_id`	BIGINT	NULL	COMMENT '신고를 처리하며 준 경우 그 신고',
+	`admin_id`	BIGINT	NOT NULL	COMMENT '조치한 메인 관리자',
+	`released_at`	DATETIME	NULL	COMMENT '정지 해제 시각',
+	`released_by`	BIGINT	NULL	COMMENT '해제한 관리자',
 	`created_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '만든 시각'
 );
 
@@ -198,11 +213,11 @@ CREATE TABLE `reports` (
 	`target_type`	ENUM('USER', 'BLOG', 'POST', 'COMMENT')	NOT NULL	COMMENT '신고 대상 종류',
 	`target_id`	BIGINT	NOT NULL	COMMENT '대상 번호 (종류마다 테이블이 달라 FK 없음)',
 	`blog_id`	BIGINT	NULL	COMMENT '블로그 안의 신고면 그 블로그 (블로그장이 처리)',
-	`handler_scope`	ENUM('BLOG_OWNER', 'ADMIN')	NOT NULL	COMMENT '처리할 사람',
+	`handler_scope`	ENUM('BLOG_OWNER', 'ADMIN')	NOT NULL	COMMENT '처리할 사람. 블로그장 본인·블로그장 글·댓글, 메인 프로필, 블로그장 정지 중인 블로그의 신고는 ADMIN',
 	`reason`	ENUM('SPAM', 'ABUSE', 'ADULT', 'ILLEGAL', 'ETC')	NOT NULL	COMMENT '사유',
 	`detail`	VARCHAR(500)	NULL	COMMENT '자세한 내용',
 	`target_snapshot`	VARCHAR(1000)	NOT NULL	COMMENT '신고 당시 대상 내용 (글 제목·본문 앞부분, 댓글 내용, 닉네임, 블로그 이름). 원본이 지워져도 1년 동안 확인',
-	`status`	ENUM('PENDING', 'NO_ISSUE', 'WARNED', 'SUSPENDED', 'KICKED', 'OWNER_DEMOTED', 'BLOG_CLOSED')	NOT NULL	DEFAULT 'PENDING'	COMMENT '처리 결과',
+	`status`	ENUM('PENDING', 'NO_ISSUE', 'WARNED', 'SUSPENDED', 'KICKED', 'OWNER_DEMOTED', 'BLOG_CLOSED', 'PROFILE_RESET', 'ACCOUNT_SUSPENDED')	NOT NULL	DEFAULT 'PENDING'	COMMENT '처리 결과',
 	`handled_by`	BIGINT	NULL	COMMENT '처리한 사람',
 	`handled_at`	DATETIME	NULL	COMMENT '처리 시각',
 	`created_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '만든 시각'
@@ -396,6 +411,10 @@ ALTER TABLE `member_sanctions` ADD CONSTRAINT `PK_MEMBER_SANCTIONS` PRIMARY KEY 
 );
 
 ALTER TABLE `owner_sanctions` ADD CONSTRAINT `PK_OWNER_SANCTIONS` PRIMARY KEY (
+	`id`
+);
+
+ALTER TABLE `user_sanctions` ADD CONSTRAINT `PK_USER_SANCTIONS` PRIMARY KEY (
 	`id`
 );
 
@@ -651,6 +670,34 @@ REFERENCES `reports` (
 
 ALTER TABLE `owner_sanctions` ADD CONSTRAINT `FK_users_TO_owner_sanctions_2` FOREIGN KEY (
 	`admin_id`
+)
+REFERENCES `users` (
+	`id`
+);
+
+ALTER TABLE `user_sanctions` ADD CONSTRAINT `FK_users_TO_user_sanctions_1` FOREIGN KEY (
+	`user_id`
+)
+REFERENCES `users` (
+	`id`
+);
+
+ALTER TABLE `user_sanctions` ADD CONSTRAINT `FK_reports_TO_user_sanctions_1` FOREIGN KEY (
+	`report_id`
+)
+REFERENCES `reports` (
+	`id`
+);
+
+ALTER TABLE `user_sanctions` ADD CONSTRAINT `FK_users_TO_user_sanctions_2` FOREIGN KEY (
+	`admin_id`
+)
+REFERENCES `users` (
+	`id`
+);
+
+ALTER TABLE `user_sanctions` ADD CONSTRAINT `FK_users_TO_user_sanctions_3` FOREIGN KEY (
+	`released_by`
 )
 REFERENCES `users` (
 	`id`

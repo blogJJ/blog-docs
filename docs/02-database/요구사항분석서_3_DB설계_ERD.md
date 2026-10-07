@@ -15,7 +15,7 @@
   - [소셜·알림](#소셜알림)
   - [시스템](#시스템)
 
-2026-10-06 기준 요구사항(3·4·6장)으로 다시 설계했습니다. MySQL 8, 테이블 32개, 관계 61개입니다. ERDCloud에 옮겨 그리기 쉽도록 테이블마다 컬럼 표를 두었고, 나중에 추가할 인덱스는 아래 메모에 따로 모았습니다.
+2026-10-06 기준 요구사항(3·4·6장)으로 다시 설계했습니다. MySQL 8, 테이블 33개, 관계 65개입니다. ERDCloud에 옮겨 그리기 쉽도록 테이블마다 컬럼 표를 두었고, 나중에 추가할 인덱스는 아래 메모에 따로 모았습니다.
 
 - **표기**: PK = 기본키, FK = 외래키, UK = 중복 불가(UNIQUE). NULL 칸의 O는 비어 있어도 됨, X는 꼭 있어야 함.
 - **관계 선**: 모든 테이블이 자기 id를 PK로 쓰므로 ERDCloud에서는 모두 **비식별 관계(점선)** 로 그립니다. FK가 NULL 불가면 "1 : N 필수", NULL 가능이면 "0..1 : N 선택"입니다.
@@ -76,6 +76,10 @@ ERDCloud의 메모에 그대로 붙여 넣을 수 있게 글자로만 적었습�
 [owner_sanctions] 블로그장 경고·권한 박탈
   - idx_owner_sanc (blog_id, user_id, type) : 경고 3번 세기
   - idx_owner_sanc_created (created_at) : 1년 지난 기록 삭제
+
+[user_sanctions] 계정 경고·프로필 초기화·정지
+  - idx_user_sanc (user_id, type) : 회원별 계정 제재 이력
+  - idx_user_sanc_created (created_at) : 1년 지난 기록 삭제
 
 [blog_blacklist] 블로그 블랙리스트
   - idx_blacklist_email (blog_id, email_hash) : 참여 신청 때 이메일 확인
@@ -205,6 +209,10 @@ erDiagram
     users ||..o{ owner_sanctions : user_id
     reports |o..o{ owner_sanctions : report_id
     users ||..o{ owner_sanctions : admin_id
+    users ||..o{ user_sanctions : user_id
+    reports |o..o{ user_sanctions : report_id
+    users ||..o{ user_sanctions : admin_id
+    users |o..o{ user_sanctions : released_by
     blogs ||..o{ blog_blacklist : blog_id
     users |o..o{ blog_blacklist : user_id
     users ||..o{ blog_blacklist : registered_by
@@ -237,7 +245,7 @@ erDiagram
     }
 ```
 
-**식별 관계와 비식별 관계**: 부모의 PK가 자식의 PK 안에 들어가면 식별 관계(실선), 자식의 일반 칸에만 들어가면 비식별 관계(점선)입니다. 이 ERD는 61개 모두 비식별입니다. 모든 테이블이 자기 id 하나를 PK로 쓰고(JPA에서 가장 간단), 다른 테이블이 id 하나로 가리킬 수 있으며, parent_id·handled_by처럼 비어 있을 수 있는 FK가 많기 때문입니다(식별 관계는 FK가 PK라 NULL이 될 수 없음). 식별 관계가 PK로 막아 주던 중복은 UNIQUE로 막습니다(예: blog_members의 (blog_id, user_id)). 한 테이블이 users를 여러 번 가리키는 경우(예: blog_blacklist의 user_id·registered_by·released_by)는 칸마다 다른 역할의 회원입니다.
+**식별 관계와 비식별 관계**: 부모의 PK가 자식의 PK 안에 들어가면 식별 관계(실선), 자식의 일반 칸에만 들어가면 비식별 관계(점선)입니다. 이 ERD는 65개 모두 비식별입니다. 모든 테이블이 자기 id 하나를 PK로 쓰고(JPA에서 가장 간단), 다른 테이블이 id 하나로 가리킬 수 있으며, parent_id·handled_by처럼 비어 있을 수 있는 FK가 많기 때문입니다(식별 관계는 FK가 PK라 NULL이 될 수 없음). 식별 관계가 PK로 막아 주던 중복은 UNIQUE로 막습니다(예: blog_members의 (blog_id, user_id)). 한 테이블이 users를 여러 번 가리키는 경우(예: blog_blacklist의 user_id·registered_by·released_by)는 칸마다 다른 역할의 회원입니다.
 
 | 부모 테이블 | 자식 테이블 | 연결 컬럼 (FK) | 식별 여부 | 관계 | 뜻 |
 |---|---|---|---|---|---|
@@ -268,6 +276,10 @@ erDiagram
 | users | owner_sanctions | user_id | 비식별 (점선) | 1 : N 필수 | 대상 블로그장 |
 | reports | owner_sanctions | report_id | 비식별 (점선) | 0..1 : N 선택 | 신고를 처리하며 준 경우 |
 | users | owner_sanctions | admin_id | 비식별 (점선) | 1 : N 필수 | 조치한 메인 관리자 |
+| users | user_sanctions | user_id | 비식별 (점선) | 1 : N 필수 | 대상 회원 |
+| reports | user_sanctions | report_id | 비식별 (점선) | 0..1 : N 선택 | 신고를 처리하며 준 경우 그 신고 |
+| users | user_sanctions | admin_id | 비식별 (점선) | 1 : N 필수 | 조치한 메인 관리자 |
+| users | user_sanctions | released_by | 비식별 (점선) | 0..1 : N 선택 | 해제한 관리자 |
 | blogs | blog_blacklist | blog_id | 비식별 (점선) | 1 : N 필수 | 블로그 |
 | users | blog_blacklist | user_id | 비식별 (점선) | 0..1 : N 선택 | 강퇴된 회원 (탈퇴하면 NULL이 될 수 있음) |
 | users | blog_blacklist | registered_by | 비식별 (점선) | 1 : N 필수 | 등록한 블로그장·부블로그장 |
@@ -341,6 +353,7 @@ erDiagram
 | bio | VARCHAR(200) |  | O |  | 소개 |
 | role | ENUM('USER','ADMIN') |  | X | 'USER' | ADMIN = 메인 관리자 (블로그 활동은 못 함, D-90) |
 | status | ENUM('ACTIVE','WITHDRAWN') |  | X | 'ACTIVE' | 탈퇴하면 행을 지우지 않고 WITHDRAWN |
+| suspended_until | DATETIME |  | O |  | 메인 관리자 계정 정지가 끝나는 시각 (ADM-08). 영구 정지는 9999-12-31. 정지 아니면 NULL |
 | login_fail_count | INT |  | X | 0 | 연속 로그인 실패 횟수 (5회면 잠금, 3회부터 CAPTCHA) |
 | locked_until | DATETIME |  | O |  | 로그인 잠금 풀리는 시각 (5분) |
 | notification_keep_days | TINYINT |  | X | 30 | 알림 보관 일수 (30 또는 7) |
@@ -534,7 +547,7 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | ends_at | DATETIME |  | O |  | 정지 끝나는 시각 |
 | reason | VARCHAR(500) |  | X |  | 사유 |
 | report_id | BIGINT | FK → reports | O |  | 신고를 처리하며 준 경우 그 신고 |
-| issued_by | BIGINT | FK → users | X |  | 조치한 블로그장·부블로그장 |
+| issued_by | BIGINT | FK → users | X |  | 조치한 블로그장·부블로그장 (블로그장 정지 중이면 메인 관리자, ADM-08) |
 | released_at | DATETIME |  | O |  | 정지 해제 시각 |
 | released_by | BIGINT | FK → users | O |  | 해제한 사람 |
 | created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 만든 시각 |
@@ -551,6 +564,24 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | report_id | BIGINT | FK → reports | O |  | 신고를 처리하며 준 경우 |
 | admin_id | BIGINT | FK → users | X |  | 조치한 메인 관리자 |
 | created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 만든 시각 |
+
+#### user_sanctions (계정 경고·프로필 초기화·정지) · ADM-08, 3.7, 4.5
+
+| 컬럼 | 타입 | 키 | NULL | 기본값 | 설명 |
+|---|---|---|---|---|---|
+| id | BIGINT | PK | X | AUTO_INCREMENT | 번호 |
+| user_id | BIGINT | FK → users | X |  | 대상 회원 |
+| type | ENUM('WARNING','PROFILE_RESET','SUSPENSION') |  | X |  | 경고 / 프로필 초기화 / 계정 정지 |
+| suspend_days | SMALLINT |  | O |  | 3, 14, 30. 영구는 NULL (정지일 때만) |
+| ends_at | DATETIME |  | O |  | 정지 끝나는 시각 |
+| reason | VARCHAR(500) |  | X |  | 사유 |
+| report_id | BIGINT | FK → reports | O |  | 신고를 처리하며 준 경우 그 신고 |
+| admin_id | BIGINT | FK → users | X |  | 조치한 메인 관리자 |
+| released_at | DATETIME |  | O |  | 정지 해제 시각 |
+| released_by | BIGINT | FK → users | O |  | 해제한 관리자 |
+| created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 만든 시각 |
+
+메인 프로필 신고를 메인 관리자가 처리한 기록입니다(D-99). 정지 중인지는 요청마다 `users.suspended_until`로 확인하고, 이 표는 이력과 해제 기록을 1년 남깁니다. 정지된 회원이 블로그장이면 블로그 공지는 따로 저장하지 않고 화면이 `blogs.owner_id`의 정지 여부로 띄웁니다(D-100).
 
 #### blog_blacklist (블로그 블랙리스트) · BLG-11, 4.6
 
@@ -591,11 +622,11 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | target_type | ENUM('USER','BLOG','POST','COMMENT') |  | X |  | 신고 대상 종류 |
 | target_id | BIGINT |  | X |  | 대상 번호 (종류마다 테이블이 달라 FK 없음) |
 | blog_id | BIGINT | FK → blogs | O |  | 블로그 안의 신고면 그 블로그 (블로그장이 처리) |
-| handler_scope | ENUM('BLOG_OWNER','ADMIN') |  | X |  | 처리할 사람 |
+| handler_scope | ENUM('BLOG_OWNER','ADMIN') |  | X |  | 처리할 사람. 블로그장 본인·블로그장 글·댓글, 메인 프로필, 블로그장 정지 중인 블로그의 신고는 ADMIN |
 | reason | ENUM('SPAM','ABUSE','ADULT','ILLEGAL','ETC') |  | X |  | 사유 |
 | detail | VARCHAR(500) |  | O |  | 자세한 내용 |
 | target_snapshot | VARCHAR(1000) |  | X |  | 신고 당시 대상 내용 (글 제목·본문 앞부분, 댓글 내용, 닉네임, 블로그 이름). 원본이 지워져도 1년 동안 확인 |
-| status | ENUM('PENDING','NO_ISSUE','WARNED','SUSPENDED','KICKED','OWNER_DEMOTED','BLOG_CLOSED') |  | X | 'PENDING' | 처리 결과 |
+| status | ENUM('PENDING','NO_ISSUE','WARNED','SUSPENDED','KICKED','OWNER_DEMOTED','BLOG_CLOSED','PROFILE_RESET','ACCOUNT_SUSPENDED') |  | X | 'PENDING' | 처리 결과 |
 | handled_by | BIGINT | FK → users | O |  | 처리한 사람 |
 | handled_at | DATETIME |  | O |  | 처리 시각 |
 | created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 만든 시각 |

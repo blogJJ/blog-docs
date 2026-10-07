@@ -16,6 +16,7 @@ ERDCloud에서 테이블과 컬럼마다 **물리 이름 = 영어(DB에 실제�
 | bio | 소개 |
 | role | 역할 |
 | status | 상태 |
+| suspended_until | 계정 정지 종료 시각 |
 | login_fail_count | 로그인 실패 횟수 |
 | locked_until | 잠금 해제 시각 |
 | notification_keep_days | 알림 보관 일수 |
@@ -198,6 +199,22 @@ ERDCloud에서 테이블과 컬럼마다 **물리 이름 = 영어(DB에 실제�
 | reason | 사유 |
 | report_id | 신고 번호 |
 | admin_id | 관리자 번호 |
+| created_at | 생성 시각 |
+
+## user_sanctions → 계정 경고·프로필 초기화·정지
+
+| 물리 이름 (영어) | 논리 이름 (한글) |
+| --- | --- |
+| id | 번호 |
+| user_id | 대상 회원 번호 |
+| type | 제재 종류 |
+| suspend_days | 정지 일수 |
+| ends_at | 정지 종료 시각 |
+| reason | 사유 |
+| report_id | 신고 번호 |
+| admin_id | 관리자 번호 |
+| released_at | 정지 해제 시각 |
+| released_by | 해제자 번호 |
 | created_at | 생성 시각 |
 
 ## blog_blacklist → 블로그 블랙리스트

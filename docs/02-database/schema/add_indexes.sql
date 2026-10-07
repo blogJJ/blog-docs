@@ -52,6 +52,10 @@ CREATE INDEX idx_member_sanc_created ON member_sanctions (created_at);  -- 1년 
 CREATE INDEX idx_owner_sanc ON owner_sanctions (blog_id, user_id, type);  -- 경고 3번 세기
 CREATE INDEX idx_owner_sanc_created ON owner_sanctions (created_at);  -- 1년 지난 기록 삭제
 
+-- user_sanctions (계정 경고·프로필 초기화·정지)
+CREATE INDEX idx_user_sanc ON user_sanctions (user_id, type);  -- 회원별 계정 제재 이력
+CREATE INDEX idx_user_sanc_created ON user_sanctions (created_at);  -- 1년 지난 기록 삭제
+
 -- blog_blacklist (블로그 블랙리스트)
 CREATE INDEX idx_blacklist_email ON blog_blacklist (blog_id, email_hash);  -- 참여 신청 때 이메일 확인
 CREATE INDEX idx_blacklist_phone ON blog_blacklist (blog_id, phone_hash);  -- 참여 신청 때 전화번호 확인
