@@ -12,7 +12,7 @@ Sync Impact Report
 
 티스토리형 블로그 플랫폼(메인블로그 + 개별 블로그)을 만들 때 모든 스펙·계획·구현이 지켜야 하는 원칙입니다.
 근거는 [요구사항분석서 1](../../docs/01-requirements/요구사항분석서_1_기본요구사항.pdf)과
-[요구사항분석서 2](../../docs/01-requirements/요구사항분석서_2_세부정책_결정기록.pdf)입니다.
+[요구사항분석서 2](../../docs/01-requirements/요구사항분석서_2_세부정책_결정기록.pdf), [요구사항분석서 3](../../docs/02-database/요구사항분석서_3_DB설계_ERD.pdf)입니다.
 
 ## Core Principles
 

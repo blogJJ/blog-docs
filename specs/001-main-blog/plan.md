@@ -41,7 +41,7 @@
 | III. 개인정보는 필요한 만큼, 서버에서 가린다 | 수집 항목 4.6, 서버 마스킹 4.4, 관리자 전체 보기 기록(ADM-06), 30일 삭제 배치 4.5, 블랙리스트 해시 | ✅ |
 | IV. 서버를 늘려도 코드를 고치지 않는다 | 상태는 DB(SCL-01), `FileStorage`(SCL-02), ShedLock(SCL-03), 프록시 헤더는 설정으로 | ✅ |
 | V. 단순한 것을 고른다 | 폴링 알림, 볼 때마다 피드, DB 조회 기록, 서버 디스크 이미지, Gmail SMTP | ✅ |
-| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-82. D-83~D-92 누락과 문서 간 차이 4건(C-1~C-4)이 남음 | ⚠️ 구현 전에 Clarifications 해결 필요 |
+| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-92. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07 모두 해결) | ✅ |
 
 위반으로 정당화할 복잡도는 없다(Complexity Tracking 비움).
 
@@ -53,15 +53,15 @@
 specs/001-main-blog/
 ├── spec.md              # 요구사항 (요구사항분석서 1·2를 Spec Kit 형식으로)
 ├── plan.md              # 이 파일
-├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-82
+├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-92
 ├── data-model.md        # 테이블 32개, 상태 전이, 검증 규칙
 ├── quickstart.md        # (아직 없음) 코드 저장소가 생기면 실행·검증 절차
 ├── contracts/           # (아직 없음) API 명세
 └── tasks.md             # (아직 없음) /speckit-tasks로 만듦
 
 docs/
-├── 01-requirements/     # 원본 요구사항분석서 PDF (근거 자료, 그대로 보관)
-└── 02-database/         # 기준 스키마 SQL과 ERDCloud 파일
+├── 01-requirements/     # 요구사항분석서 1·2 PDF (근거 자료)
+└── 02-database/         # 요구사항분석서 3(DB 설계 PDF), 기준 스키마 SQL, ERDCloud 파일
 ```
 
 ### Source Code
@@ -88,7 +88,7 @@ src/main/resources/
 
 ## 다음 단계
 
-1. 팀이 [spec.md Clarifications](spec.md#clarifications) C-1~C-4를 정하고 본문·research.md·DB 설계를 맞춘다. `/speckit-clarify`로 남은 모호한 곳을 더 찾을 수 있다.
+1. 요구사항이 바뀌면 PDF와 함께 spec.md·research.md를 고친다. `/speckit-clarify`로 남은 모호한 곳을 더 찾을 수 있다. 남은 보류 항목은 태그 금칙어(6.4)와 이중화 기술(서버를 늘릴 때) 둘이다.
 2. 코드 저장소 구조가 정해지면 `/speckit-plan`으로 이 문서의 Source Code 절과 `contracts/`(API 명세), `quickstart.md`를 채운다.
 3. `/speckit-tasks`로 tasks.md를 만들고, `/speckit-analyze`로 스펙·계획·작업이 서로 맞는지 확인한다.
 

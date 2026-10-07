@@ -2,7 +2,7 @@
 
 **Feature**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md)
 
-기준은 [erd_tables.sql](../../docs/02-database/schema/erd_tables.sql)(MySQL 8, InnoDB, utf8mb4)입니다. 이 문서는 테이블을 요구사항과 연결하고 상태 전이와 검증 규칙을 정리합니다. 컬럼 하나하나의 정의와 한글 이름은 SQL 파일과 [erdcloud_names.md](../../docs/02-database/erdcloud/erdcloud_names.md)를 보세요. 조회용 인덱스는 [add_indexes.sql](../../docs/02-database/schema/add_indexes.sql)에 있습니다(나중에 추가).
+기준은 [erd_tables.sql](../../docs/02-database/schema/erd_tables.sql)(MySQL 8, InnoDB, utf8mb4)이고, 같은 내용을 표와 관계도로 정리한 원문은 [요구사항분석서 3 · DB 설계(ERD)](../../docs/02-database/요구사항분석서_3_DB설계_ERD.pdf)입니다(테이블 32개, 관계 61개, D-84). 이 문서는 테이블을 요구사항과 연결하고 상태 전이와 검증 규칙을 정리합니다. 컬럼 하나하나의 정의와 한글 이름은 SQL 파일과 [erdcloud_names.md](../../docs/02-database/erdcloud/erdcloud_names.md)를 보세요. 조회용 인덱스는 [add_indexes.sql](../../docs/02-database/schema/add_indexes.sql)에 있습니다(나중에 추가).
 
 테이블이나 컬럼을 바꾸면 `erd_tables.sql` → `erdcloud_import.sql` → `erdcloud_names.md` → 이 문서 순서로 같이 고칩니다.
 
@@ -20,7 +20,7 @@
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `users` | 회원 | USR-01~08, SEC-01~03 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN, `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각 |
+| `users` | 회원 | USR-01~08, SEC-01~03 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 블로그 활동 불가, 메인 공지·관리만, D-90), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각 |
 | `verification_codes` | 이메일 인증번호 | USR-02, USR-06 | 회원 번호 대신 `email` 기준. `purpose` SIGNUP(10분)/PASSWORD_RESET(30분), `code_hash`, `fail_count`(5번 무효), `verified_at`, `used_at`(1회용) |
 | `account_find_tokens` | 이메일 찾기 임시 토큰 | USR-08 | `token_hash`, 10분 만료 |
 | `refresh_tokens` | Refresh Token | SEC-04, USR-04 | `token_hash`, `remember_me`(14일/30분), `user_agent`, `revoked_at`(로그아웃·비밀번호 변경) |
@@ -37,7 +37,7 @@
 | `blog_subscriptions` | 블로그 구독 | SOC-01 | 회원·블로그 UNIQUE |
 | `blog_close_notices` | 폐쇄 알림 발송 기록 | BLG-09 | `close_scheduled_at` + `stage` IMMEDIATE/D3/D1/REVOKED로 중복 발송 방지 |
 | `categories` | 카테고리 | BRD-03 | 블로그별, `sort_order` |
-| `blog_tags` | 블로그 태그 | BLG-03 | 블로그 검색용 태그 |
+| `blog_tags` | 블로그 태그 | BLG-01, BLG-03 | 블로그 생성 때 다는 태그(최대 10개, D-88). 블로그·태그 UNIQUE |
 
 ### 운영·제재
 
@@ -47,14 +47,14 @@
 | `owner_sanctions` | 블로그장 경고·권한 박탈 | ADM-07 | `type` WARNING/DEMOTION. 경고 3번이면 박탈 |
 | `blog_blacklist` | 블로그 블랙리스트 | BLG-11 | `name_hash`, `email_hash`, `phone_hash`. 고치거나 지우지 않고 `released_at`으로만 해제 |
 | `blacklist_inquiries` | 블랙리스트 해제 문의 | BLG-12 | `name_match`, `phone_match`(서버 비교), `status` PENDING/RELEASED/REJECTED |
-| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN, `reason`, `target_snapshot`(원본이 지워져도 1년 확인), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED |
+| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN, `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED |
 | `admin_action_logs` | 관리자 활동 기록 | ADM-06, SEC-09 | `action`(예: OWNER_WARN, CLOSE_BLOG, VIEW_PRIVATE_INFO), 대상, 사유. 1년 보관 |
 
 ### 게시판
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `posts` | 게시글 | BRD-01, 02, 10 | `title` 1~30자, `content` 마크다운(⚠️ 길이 C-1), `is_notice`, `status` PUBLISHED/HIDDEN/DELETED, `author_hidden`("탈퇴한 계정"), 개수 캐시, `deleted_by`·`deleted_at`. 메인 공지는 `main` 블로그의 글 |
+| `posts` | 게시글 | BRD-01, 02, 10 | `title` 1~30자, `content` 마크다운 TEXT(최대 5,000자는 서버에서 검사, D-92), `is_notice`, `status` PUBLISHED/HIDDEN/DELETED, `author_hidden`("탈퇴한 계정"), 개수 캐시, `deleted_by`·`deleted_at`. 메인 공지는 `main` 블로그의 글 |
 | `tags` | 태그 | BRD-04 | `name` 영문 소문자, 1~20자, UNIQUE |
 | `post_tags` | 글-태그 연결 | BRD-04 | `uk_post_tags`로 한 글 안 중복 방지 |
 | `post_images` | 글 이미지 | BRD-05, SEC-08 | `stored_name`(UUID), `original_name`(DB에만), `content_type`, `size_bytes`(3MB 이하), `sort_order`(첫 이미지가 공유 미리보기), 글 저장 전 업로드면 `post_id` NULL |
@@ -84,7 +84,7 @@ ACTIVE ──폐쇄 버튼(BLG-09) / 블로그장 박탈 + 부블로그장 없�
                                                                           │
 ACTIVE ──관리자 강제 폐쇄(ADM-02)──▶ CLOSED ◀── close_scheduled_at 지난 뒤 04:00 배치
                                        │
-                                       └─ 30일 뒤: 글·사진·카테고리 삭제, slug NULL (행은 남김)
+                                       └─ 30일 뒤: 글·사진·카테고리·블랙리스트 삭제, slug NULL (행은 남김, D-86)
 ```
 
 - CLOSING 중에도 글쓰기·댓글은 평소처럼 된다(D-67). 위임은 막힌다(D-20).
@@ -146,9 +146,9 @@ PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED
 | 블로그 주소 | 영문 소문자·숫자·`-` 3~30자, 중복 불가, 예약어(main, admin, api, login, signup, search 등) 불가 | 6.5 |
 | 블로그 개수 | 공개(일부 공개 포함) 3개(설정, 최대 5), 비공개 5개. 회원 행 잠금 후 셈 | BLG-10, D-68 |
 | 글 제목 | 1~30자 | 6.6 |
-| 글 본문 | 최대 1,000자(요구사항) / 5,000자(DB) ⚠️ C-1 | 6.6, D-92 |
+| 글 본문 | 최대 5,000자 (공백·마크다운 기호 포함) | 6.6, D-92 |
 | 댓글 | 1~500자, 대댓글은 1단계까지 | 6.6 |
-| 태그 | 1~20자, 한글·영문·숫자·`_`, 글 하나에 10개, 영문 소문자 | 6.4 |
+| 태그 | 1~20자, 한글·영문·숫자·`_`, 글·블로그 하나에 10개, 영문 소문자 | 6.4, D-88 |
 | 이미지 | jpg·jpeg·png·gif·webp, 장당 3MB, 글 하나에 10장(10MB), 확장자·MIME·시그니처 확인, EXIF 제거 | 6.3 |
 | 검색어 | 2~20자, 공백·특수문자만이면 거부 | 6.1 |
 | 신고 | 같은 사람·같은 대상 2주에 한 번 | 6.5 |
@@ -163,7 +163,7 @@ PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED
 1. `close_scheduled_at`이 지난 CLOSING 블로그 → CLOSED
 2. 폐쇄까지 3일·1일 남은 블로그 → `blog_close_notices`에 없으면 알림
 3. 7일 지난 PENDING 위임 요청 → EXPIRED, 블로그장에게 알림
-4. 30일 지난 삭제 글·댓글·사진, 폐쇄 블로그 데이터 완전 삭제, 폐쇄 블로그 `slug` NULL
+4. 30일 지난 삭제 글·댓글·사진 완전 삭제. 폐쇄 30일 지난 블로그는 글·사진·카테고리·블랙리스트를 지우고 `slug`를 NULL로 비움(블로그 행은 남김, D-86)
 5. 탈퇴 30일 지난 회원의 개인정보 NULL
-6. 보관 기간 지난 알림, 만료 인증번호·임시 토큰·Refresh Token 삭제
+6. 보관 기간 지난 알림, 만료 인증번호·임시 토큰 삭제, 만료 Refresh Token 삭제(D-83)
 7. 1년 지난 운영 기록 삭제
