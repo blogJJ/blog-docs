@@ -44,10 +44,10 @@
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
 | `member_sanctions` | 멤버 경고·정지·강제 퇴장 | BLG-13, 3.7 | `type` WARNING/SUSPENSION/KICK, `suspend_days` 3/14/30(영구 NULL), `ends_at`, `report_id`, `released_at`. 1년 보관 |
-| `owner_sanctions` | 블로그장 경고·권한 박탈 | ADM-07 | `type` WARNING/DEMOTION. 경고 3번이면 박탈 |
+| `owner_sanctions` | 블로그장 경고·권한 박탈 | ADM-07 | `type` WARNING/DEMOTION. 그 블로그에서 최근 1년 안의 경고가 3번이면 박탈(블로그별, D-97) |
 | `blog_blacklist` | 블로그 블랙리스트 | BLG-11 | `name_hash`, `email_hash`, `phone_hash`. 고치거나 지우지 않고 `released_at`으로만 해제 |
 | `blacklist_inquiries` | 블랙리스트 해제 문의 | BLG-12 | `name_match`, `phone_match`(서버 비교), `status` PENDING/RELEASED/REJECTED |
-| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN, `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED |
+| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN(블로그장 본인·블로그장 글·댓글 신고와 `blog_id`가 없는 메인 프로필 신고는 ADMIN, D-94, D-95), `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED |
 | `admin_action_logs` | 관리자 활동 기록 | ADM-06, SEC-09 | `action`(예: OWNER_WARN, CLOSE_BLOG, VIEW_PRIVATE_INFO), 대상, 사유. 1년 보관 |
 
 ### 게시판
@@ -78,11 +78,11 @@
 ### 블로그 (`blogs.status`)
 
 ```text
-ACTIVE ──폐쇄 버튼(BLG-09) / 블로그장 박탈 + 부블로그장 없음(ADM-07)──▶ CLOSING
-  ▲                                                                       │
-  └──────────────── 폐쇄 철회 (7일 안, 블로그장만) ◀─────────────────────────┤
-                                                                          │
-ACTIVE ──관리자 강제 폐쇄(ADM-02)──▶ CLOSED ◀── close_scheduled_at 지난 뒤 04:00 배치
+ACTIVE ──폐쇄 버튼(BLG-09) / 관리자 강제 폐쇄(ADM-02, D-96) / 블로그장 박탈 + 부블로그장 없음(ADM-07)──▶ CLOSING
+  ▲                                                                                                  │
+  └──────────────── 폐쇄 철회 (7일 안, 그 블로그의 블로그장만) ◀───────────────────────────────────────┤
+                                                                                                     │
+                                     CLOSED ◀── close_scheduled_at 지난 뒤 04:00 배치 ◀───────────────┘
                                        │
                                        └─ 30일 뒤: 글·사진·카테고리·블랙리스트 삭제, slug NULL (행은 남김, D-86)
 ```
@@ -133,6 +133,7 @@ ACTIVE ──탈퇴(운영 중·폐쇄 예정 블로그 없음)──▶ WITHDRA
 ```text
 PENDING ──블로그장 처리(handler_scope = BLOG_OWNER)──▶ NO_ISSUE | WARNED | SUSPENDED | KICKED
 PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED | OWNER_DEMOTED | BLOG_CLOSED
+                                                (메인 프로필 회원 신고는 NO_ISSUE | WARNED만, D-95)
 ```
 
 ## 검증 규칙 (서버에서 검사)
