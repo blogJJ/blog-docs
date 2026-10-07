@@ -57,7 +57,7 @@ specs/001-main-blog/
 ├── data-model.md        # 테이블 33개, 상태 전이, 검증 규칙
 ├── quickstart.md        # (아직 없음) 코드 저장소가 생기면 실행·검증 절차
 ├── contracts/           # (아직 없음) API 명세
-└── tasks.md             # (아직 없음) /speckit-tasks로 만듦
+└── tasks.md             # 구현 작업 134개 (/speckit-tasks)
 
 docs/
 ├── 01-requirements/     # 요구사항분석서 1·2 PDF (근거 자료)
@@ -90,7 +90,7 @@ src/main/resources/
 
 1. 요구사항이 바뀌면 PDF와 함께 spec.md·research.md를 고친다. `/speckit-clarify`로 남은 모호한 곳을 더 찾을 수 있다. 남은 보류 항목은 이중화 기술(서버를 늘릴 때) 하나다.
 2. 코드 저장소 구조가 정해지면 `/speckit-plan`으로 이 문서의 Source Code 절과 `contracts/`(API 명세), `quickstart.md`를 채운다.
-3. `/speckit-tasks`로 tasks.md를 만들고, `/speckit-analyze`로 스펙·계획·작업이 서로 맞는지 확인한다.
+3. [tasks.md](tasks.md)의 작업 순서대로 구현한다(MVP는 US1~US3). `contracts/`와 `quickstart.md`를 채운 뒤 `/speckit-analyze`로 스펙·계획·작업이 서로 맞는지 확인한다.
 
 ## Complexity Tracking
 
