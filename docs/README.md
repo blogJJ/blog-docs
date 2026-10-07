@@ -9,6 +9,7 @@
 | [plan.md](../specs/001-main-blog/plan.md) | 기술 맥락, 원칙 점검, 구조, 다음 단계 |
 | [research.md](../specs/001-main-blog/research.md) | 구현 방식을 고른 이유, 이중화 기술 후보, 결정 기록 D-01~D-100 |
 | [data-model.md](../specs/001-main-blog/data-model.md) | 테이블 33개를 요구사항과 연결, 상태 전이, 검증 규칙 |
+| [tasks.md](../specs/001-main-blog/tasks.md) | 구현 작업 134개를 사용자 스토리별로 나눈 목록, 순서와 동시 작업, MVP 범위 |
 
 ## 원본 문서
 
