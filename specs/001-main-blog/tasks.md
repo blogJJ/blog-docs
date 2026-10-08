@@ -126,7 +126,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T047 [US2] 블로그 열람 권한 확인을 `src/main/java/com/blog/blog/service/BlogAccessService.java`에 만든다: 공개는 누구나, 일부 공개는 공유 링크, 비공개는 멤버만, 숨김·폐쇄 블로그 제외, 그 블로그에서 정지된 멤버는 기간·사유 안내와 함께 막음
 - [ ] T048 [US2] 블로그 목록 API `GET /api/blogs?sort=latest|popular&page=`를 `BlogController.java`에 만든다: 공개 블로그만, 인기순은 `member_count` 순, 번호 페이지 (BLG-02, D-89)
 - [ ] T049 [US2] 블로그 검색 API `GET /api/blogs/search?q=`를 `BlogController.java`에 만든다: 이름·소개(FULLTEXT ngram), 블로그 태그 일치 (BLG-03)
-- [ ] T050 [US2] 참여 신청 API `POST /api/blogs/{blogId}/join`을 `src/main/java/com/blog/blog/service/JoinService.java`, `src/main/java/com/blog/blog/api/JoinController.java`에 만든다: 자유 참여는 바로 MEMBER, 승인제는 PENDING, 대기 중이면 다시 신청 불가, 거절 후 `handled_at` + 7일 전에는 불가, AccountGuard 적용, 블로그장·승인 권한 부블로그장에게 "참여 신청" 알림 (BLG-04, D-01)
+- [ ] T050 [US2] 참여 신청 API `POST /api/blogs/{blogId}/join`을 `src/main/java/com/blog/blog/service/JoinService.java`, `src/main/java/com/blog/blog/api/JoinController.java`에 만든다: 자유 참여는 바로 MEMBER, 승인제는 PENDING, 대기 중이면 다시 신청 불가, 거절 후 `handled_at` + 7일 전에는 불가, 블로그장이 계정 정지 중이고 부블로그장이 없으면 "블로그장 정지로 참여 신청이 일시 중지되었어요 (끝나는 날짜까지)"로 거부(D-115), AccountGuard 적용, 블로그장·승인 권한 부블로그장에게 "참여 신청" 알림 (BLG-04, D-01)
 - [ ] T051 [US2] 참여 승인·거절·취소 API `POST /api/blogs/{blogId}/join-requests/{id}/approve|reject`, `DELETE /api/blogs/{blogId}/join-requests/{id}`를 `JoinController.java`에 만든다. 승인·거절은 `@PreAuthorize` 블로그장 또는 MANAGE_MEMBERS 권한, 결과는 신청자에게 알림 (BLG-05)
 - [ ] T052 [US2] 내 블로그 목록 API `GET /api/me/blogs`를 `BlogController.java`에 만든다: 만든 블로그와 참여한 블로그를 나눠서 (BLG-06)
 - [ ] T053 [US2] 블로그 정보 수정 API `PUT /api/blogs/{blogId}`(이름·소개·대표 이미지·태그·공개 범위·참여 방식)를 `BlogController.java`에 만든다. 블로그장 또는 EDIT_INFO 권한
