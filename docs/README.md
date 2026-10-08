@@ -7,7 +7,7 @@
 | [constitution.md](../.specify/memory/constitution.md) | 모든 스펙·구현이 지킬 원칙 (보안, 블로그별 역할, 개인정보, 이중화 대비, 단순함, 결정 기록) |
 | [spec.md](../specs/001-main-blog/spec.md) | 메인블로그 요구사항: 사용자 스토리, 기능·비기능 요구사항, 성공 기준, 정리한 질문(Clarifications) |
 | [plan.md](../specs/001-main-blog/plan.md) | 기술 맥락, 원칙 점검, 구조, 다음 단계 |
-| [research.md](../specs/001-main-blog/research.md) | 구현 방식을 고른 이유, 이중화 기술 후보, 결정 기록 D-01~D-112 |
+| [research.md](../specs/001-main-blog/research.md) | 구현 방식을 고른 이유, 이중화 기술 후보, 결정 기록 D-01~D-113 |
 | [data-model.md](../specs/001-main-blog/data-model.md) | 테이블 33개를 요구사항과 연결, 상태 전이, 검증 규칙 |
 | [tasks.md](../specs/001-main-blog/tasks.md) | 구현 작업 147개를 사용자 스토리별로 나눈 목록, 순서와 동시 작업, MVP 범위 |
 
