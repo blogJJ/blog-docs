@@ -48,7 +48,7 @@
 | `user_sanctions` | 계정 경고·프로필 초기화·정지 | ADM-08 | 메인 프로필 신고 처리 기록. `type` WARNING/PROFILE_RESET/SUSPENSION, `suspend_days` 3/14/30(영구 NULL), `ends_at`, `report_id`, `admin_id`, `released_at`. 정지 중인지는 `users.suspended_until`로 확인. 1년 보관 (D-99) |
 | `blog_blacklist` | 블로그 블랙리스트 | BLG-11 | `name_hash`, `email_hash`, `phone_hash`. 고치거나 지우지 않고 `released_at`으로만 해제 |
 | `blacklist_inquiries` | 블랙리스트 해제 문의 | BLG-12 | `name_match`, `phone_match`(서버 비교), `status` PENDING/RELEASED/REJECTED |
-| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN(블로그장 본인·블로그장 글·댓글 신고, `blog_id`가 없는 메인 프로필 신고, 블로그장이 계정 정지 중인 블로그의 신고는 ADMIN, D-94, D-95, D-100), `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED/PROFILE_RESET/ACCOUNT_SUSPENDED |
+| `reports` | 신고 | SOC-06, ADM-04 | `target_type` USER/BLOG/POST/COMMENT, `handler_scope` BLOG_OWNER/ADMIN(블로그장 본인·블로그장 글·댓글 신고, `blog_id`가 없는 메인 프로필 신고, 블로그장이 계정 정지 중이고 부블로그장이 없는 블로그의 신고는 ADMIN, D-94, D-95, D-100, D-114), `reason`, `target_id`(종류마다 테이블이 달라 FK 없음), `target_snapshot`(원본이 지워져도 1년 확인, D-85), `status` PENDING/NO_ISSUE/WARNED/SUSPENDED/KICKED/OWNER_DEMOTED/BLOG_CLOSED/PROFILE_RESET/ACCOUNT_SUSPENDED |
 | `admin_action_logs` | 관리자 활동 기록 | ADM-06, SEC-09 | `action`(예: OWNER_WARN, CLOSE_BLOG, VIEW_PRIVATE_INFO), 대상, 사유. 1년 보관 |
 
 ### 게시판
@@ -135,7 +135,7 @@ ACTIVE ──탈퇴(운영 중·폐쇄 예정 블로그 없음)──▶ WITHDRA
 PENDING ──블로그장 처리(handler_scope = BLOG_OWNER)──▶ NO_ISSUE | WARNED | SUSPENDED | KICKED
 PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED | OWNER_DEMOTED | BLOG_CLOSED
                                                 메인 프로필 신고: NO_ISSUE | WARNED | PROFILE_RESET | ACCOUNT_SUSPENDED (D-99)
-                                                블로그장 정지 중인 블로그의 신고: NO_ISSUE | WARNED | SUSPENDED | KICKED (D-100)
+                                                블로그장 정지 중이고 부블로그장 없는 블로그의 신고: NO_ISSUE | WARNED | SUSPENDED | KICKED (D-100, D-114)
 ```
 
 ## 검증 규칙 (서버에서 검사)
