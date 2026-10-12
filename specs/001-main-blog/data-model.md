@@ -29,7 +29,7 @@
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `blogs` | 블로그 | BLG-01~03, 09, 10, 14, ADM-02 | `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL, D-86), `mascot`(픽셀 그림 18종: 동물 10종·물건 8종 중 하나, NULL이면 아직 안 고름, D-116), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`(일부 공개 링크 무작위 값), `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at` |
+| `blogs` | 블로그 | BLG-01~03, 09, 10, 14, ADM-02 | `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL, D-86), `mascot`(픽셀 그림 조합 `바탕.색.모자.장식`, 바탕은 동물 10종·물건 8종, 다른 블로그와 겹치지 않음, NULL이면 아직 안 만듦, D-116, D-118), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`(일부 공개 링크 무작위 값), `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at` |
 | `blog_members` | 블로그 멤버 | BLG-04~08, 13, SEC-07 | `role` OWNER/MANAGER/MEMBER, `manager_since`(자동 위임 순서), `suspended_until`(영구는 9999-12-31), `suspension_count`(3번이면 표시) |
 | `blog_manager_permissions` | 부블로그장 권한 | 2장, D-71 | `permission` EDIT_INFO/MANAGE_MEMBERS/MANAGE_POSTS |
 | `blog_join_requests` | 참여 신청 | BLG-04, 05 | `status` PENDING/APPROVED/REJECTED/CANCELED, `handled_at`(거절 7일 뒤 재신청 기준) |
@@ -153,7 +153,7 @@ PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED
 | 댓글 | 1~500자, 대댓글은 1단계까지 | 6.6 |
 | 태그 | 1~20자, 한글·영문·숫자·`_`, 글·블로그 하나에 10개, 영문 소문자 | 6.4, D-88 |
 | 이미지 | jpg·jpeg·png·gif·webp, 장당 3MB, 글 하나에 10장(10MB), 확장자·MIME·시그니처 확인, EXIF 제거 | 6.3 |
-| 마스코트 | 동물 bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl과 물건 computer, camera, book, plane, headphones, gamepad, coffee, cake 중 하나만 저장. 목록에 없는 답은 버리고 태그 단어 사전·기본값으로 | BLG-14, D-116 |
+| 마스코트 | 바탕은 동물 bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl과 물건 computer, camera, book, plane, headphones, gamepad, coffee, cake 중 하나, 색은 original·pastel·mint·berry·sky·cocoa, 모자는 none·beret·party·crown·flower·bow·sprout·beanie, 장식은 none·heart·star·note·sparkle·leaf. `bear.mint.beret.heart`처럼 점으로 이어 저장. 목록에 없는 답은 버리고 태그 단어 사전·기본값으로. 폐쇄되지 않은 다른 블로그나 이 블로그의 지금 값과 같으면 같은 바탕 안의 다른 조합으로 바꿈 | BLG-14, D-116, D-118 |
 | 검색어 | 2~20자, 공백·특수문자만이면 거부 | 6.1 |
 | 신고 | 같은 사람·같은 대상 2주에 한 번 | 6.5 |
 | 참여 신청 | 대기 중이면 불가, 거절 후 7일 | 6.5 |
