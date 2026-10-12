@@ -351,7 +351,7 @@ erDiagram
 | phone | VARCHAR(11) |  | O |  | 숫자만. 1차는 중복 허용. 탈퇴 30일 뒤 NULL |
 | profile_image | VARCHAR(255) |  | O |  | 프로필 사진 저장 경로 (UUID 이름) |
 | bio | VARCHAR(200) |  | O |  | 소개 |
-| role | ENUM('USER','ADMIN') |  | X | 'USER' | ADMIN = 메인 관리자 (블로그 활동은 못 함, D-90) |
+| role | ENUM('USER','ADMIN') |  | X | 'USER' | ADMIN = 메인 관리자 (모든 블로그 관리 + 일반 회원 활동, D-122) |
 | status | ENUM('ACTIVE','WITHDRAWN') |  | X | 'ACTIVE' | 탈퇴하면 행을 지우지 않고 WITHDRAWN |
 | suspended_until | DATETIME |  | O |  | 메인 관리자 계정 정지가 끝나는 시각 (ADM-08). 영구 정지는 9999-12-31. 정지 아니면 NULL |
 | login_fail_count | INT |  | X | 0 | 연속 로그인 실패 횟수 (5회면 잠금, 3회부터 CAPTCHA) |
@@ -420,7 +420,7 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | slug | VARCHAR(30) | UK | O |  | 블로그 주소 /blog/{slug}. 영문 소문자·숫자·-. 폐쇄 30일 뒤 NULL로 비워 다른 사람이 쓸 수 있게 함 (D-86) |
 | name | VARCHAR(50) |  | X |  | 블로그 이름 (중복 허용) |
 | description | VARCHAR(500) |  | O |  | 소개 |
-| cover_image | VARCHAR(255) |  | O |  | 대표 이미지 경로 |
+| cover_image | VARCHAR(255) |  | O |  | 대표 이미지 경로. 블로그장이 올린 이미지, 올리지 않은 새 블로그는 Claude가 그려 걸러 낸 SVG (D-126) |
 | mascot | VARCHAR(40) |  | O |  | 마스코트 픽셀 그림 조합 바탕.색.모자.장식 (예: bear.mint.beret.heart). 바탕은 동물 10종·물건 8종. 다른 블로그와 겹치지 않게 만든다. NULL이면 아직 안 만듦 (D-116, D-118) |
 | cover_scene | VARCHAR(60) |  | O |  | 대표 이미지가 없을 때 보여 줄 픽셀 장면 장면.시간.날씨.색.배치번호 (예: study.night.rain.mint.4821). 배치 번호는 만들 때마다 새로 뽑는다. NULL이면 아직 안 만듦 (D-119) |
 | visibility | ENUM('PUBLIC','LINK_ONLY','PRIVATE') |  | X | 'PUBLIC' | 공개 / 일부 공개 / 비공개 |

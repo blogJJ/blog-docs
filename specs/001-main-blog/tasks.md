@@ -62,7 +62,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T015 JWT 발급·검증(토큰에는 회원 번호만)을 `src/main/java/com/blog/common/security/JwtProvider.java`에, 쿠키에서 Access Token을 읽어 인증하는 필터를 `src/main/java/com/blog/common/security/JwtCookieAuthFilter.java`에 만든다(HttpOnly·Secure 쿠키, localStorage 금지, SEC-04)
 - [ ] T016 Spring Security 설정을 `src/main/java/com/blog/common/config/SecurityConfig.java`에 만든다: 주소별 비회원·회원·관리자 구분, `CookieCsrfTokenRepository`로 CSRF(POST·PUT·DELETE), 보안 헤더(X-Frame-Options, X-Content-Type-Options: nosniff, Content-Security-Policy, Strict-Transport-Security, Referrer-Policy), `@EnableMethodSecurity` (SEC-10~12)
 - [ ] T017 블로그별 역할을 요청마다 DB로 확인하는 빈을 `src/main/java/com/blog/common/security/BlogAuthz.java`에 만든다: `isOwner(blogId)`, `isMember(blogId)`, `hasPermission(blogId, EDIT_INFO|MANAGE_MEMBERS|MANAGE_POSTS)`, 블로그 단위 정지(`blog_members.suspended_until`) 확인. `@PreAuthorize("@blogAuthz....")`로 쓴다 (SEC-07, constitution II)
-- [ ] T018 계정 상태 확인을 `src/main/java/com/blog/common/security/AccountGuard.java`에 만든다: `role = ADMIN`이면 블로그 만들기·참여·글쓰기·댓글·좋아요·팔로우 거부(D-90), `users.suspended_until`이 지금보다 뒤면 글·댓글·좋아요·팔로우·구독·블로그 만들기·참여 신청 거부(ADM-08)
+- [ ] T018 계정 상태 확인을 `src/main/java/com/blog/common/security/AccountGuard.java`에 만든다: `role = ADMIN`도 일반 회원과 같이 블로그 만들기·참여 신청·글쓰기·댓글·좋아요·팔로우·구독을 허용하고(D-122), `users.suspended_until`이 지금보다 뒤면 글·댓글·좋아요·팔로우·구독·블로그 만들기·참여 신청 거부(ADM-08)
 - [ ] T019 [P] 개인정보 가리기를 `src/main/java/com/blog/common/privacy/Masking.java`에 만든다: 이메일은 @ 앞 처음 2글자만 보이고 나머지 `***`(@ 앞이 2글자 이하면 첫 글자만, `abcdef@gmail.com → ab***@gmail.com`), 전화번호는 가운데 4자리 가림(`010-1234-5678 → 010-****-5678`). 응답을 만들 때 서버에서 적용 (D-22)
 - [ ] T020 [P] 해시 도구(SHA-256 + 서버 비밀값)를 `src/main/java/com/blog/common/crypto/HashUtil.java`에 만든다. 인증번호·토큰·블랙리스트 개인정보에 쓴다
 - [ ] T021 [P] `FileStorage` 인터페이스와 디스크 구현을 `src/main/java/com/blog/common/storage/FileStorage.java`, `LocalDiskFileStorage.java`에 만든다. 저장 이름은 UUID (SCL-02)
@@ -121,7 +121,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T042 [P] [US2] `blog_join_requests` 엔티티와 리포지토리를 `src/main/java/com/blog/blog/domain/BlogJoinRequest.java`, `src/main/java/com/blog/blog/repository/BlogJoinRequestRepository.java`에 만든다: `status` PENDING/APPROVED/REJECTED/CANCELED, `handled_at`
 - [ ] T043 [US2] 태그 정리 규칙을 `src/main/java/com/blog/board/service/TagNormalizer.java`에 만든다: 앞의 #과 앞뒤 공백 제거, 가운데 공백은 `_`, 영문은 소문자, 1~20자 한글·영문·숫자·`_`, 한 글·블로그 안 중복은 합침, 10개까지, 금칙어 없음 (BRD-04, D-88, D-98). 블로그와 글이 같이 쓴다
 - [ ] T044 [US2] 블로그 만들기 API `POST /api/blogs`를 `src/main/java/com/blog/blog/service/BlogService.java`, `src/main/java/com/blog/blog/api/BlogController.java`에 만든다: 이름(중복 허용)·주소·소개·대표 이미지(3MB 1장)·태그·공개 범위·참여 방식, 주소는 영문 소문자·숫자·`-` 3~30자, 중복 불가, 예약어(main, admin, api, login, signup, search 등) 불가, 만든 회원을 OWNER로 `blog_members`에 추가, AccountGuard 적용 (BLG-01, D-70)
-- [ ] T045 [US2] 생성 개수 제한을 `BlogService.java`에 넣는다: 공개(일부 공개 포함) 3개(`blog.limit.public`, 최대 5), 비공개 5개. 회원 행을 `SELECT ... FOR UPDATE`로 잠근 뒤 세고 만든다 (BLG-10, D-68, SC-006)
+- [ ] T045 [US2] 생성 개수 제한을 `BlogService.java`에 넣는다: 공개(일부 공개 포함) 3개(`blog.limit.public`, 최대 5), 비공개 5개. 회원 행을 `SELECT ... FOR UPDATE`로 잠근 뒤 세고 만든다. `role = ADMIN`은 세지 않는다 (BLG-10, D-68, D-122, SC-006)
 - [ ] T046 [US2] 일부 공개 공유 링크를 `src/main/java/com/blog/blog/service/ShareLinkService.java`에 만든다: 주소와 별개인 무작위 `share_key`, 새로 만들면 이전 링크 무효, 링크 없이 주소로만 오면 막음, 링크로 온 비회원도 열람 (BLG-01, D-37, D-49, D-50)
 - [ ] T047 [US2] 블로그 열람 권한 확인을 `src/main/java/com/blog/blog/service/BlogAccessService.java`에 만든다: 공개는 누구나, 일부 공개는 공유 링크, 비공개는 멤버만, 숨김·폐쇄 블로그 제외, 그 블로그에서 정지된 멤버는 기간·사유 안내와 함께 막음
 - [ ] T048 [US2] 블로그 목록 API `GET /api/blogs?sort=latest|popular&page=`를 `BlogController.java`에 만든다: 공개 블로그만, 인기순은 `member_count` 순, 번호 페이지 (BLG-02, D-89)
@@ -306,7 +306,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 
 **Purpose**: 여러 스토리에 걸친 확인과 마무리
 
-- [ ] T127 블로그별 권한 통합 테스트를 `src/test/java/com/blog/security/BlogAuthzIntegrationTest.java`에 만든다: 블로그 A의 블로그장으로 블로그 B의 멤버 제재, 글 삭제, 정보 수정, 폐쇄를 호출하면 모두 403. 권한 없는 부블로그장, 그 블로그에서 정지된 멤버, 계정 정지된 블로그장, ADMIN 계정의 블로그 활동도 거부 (SEC-07, SC-002, plan.md)
+- [ ] T127 블로그별 권한 통합 테스트를 `src/test/java/com/blog/security/BlogAuthzIntegrationTest.java`에 만든다: 블로그 A의 블로그장으로 블로그 B의 멤버 제재, 글 삭제, 정보 수정, 폐쇄를 호출하면 모두 403. 권한 없는 부블로그장, 그 블로그에서 정지된 멤버, 계정 정지된 블로그장도 거부(ADMIN의 관리 권한과 회원 활동은 T153에서 확인) (SEC-07, SC-002, plan.md)
 - [ ] T128 [P] 응답 개인정보 점검: 모든 API 응답 DTO를 `src/main/java/com/blog/**/api/` 기준으로 훑어 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지 확인하고, 비밀번호 칸이 어느 응답에도 없는지 확인한다 (SC-004, 4.4)
 - [ ] T129 [P] 보안 헤더와 CSP를 실제 화면(Toast UI Editor, Turnstile 스크립트 포함)에서 확인하고 `src/main/java/com/blog/common/config/SecurityConfig.java`의 CSP를 맞춘다 (SEC-12)
 - [ ] T130 [P] 동시 요청으로 공개 블로그 생성 제한이 지켜지는지 `src/test/java/com/blog/blog/BlogLimitConcurrencyTest.java`로 확인한다 (SC-006)
@@ -314,7 +314,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T132 [P] 서버 2대 대비 점검: 이미지 저장소·IP 요청 제한 저장소·프록시 헤더가 설정만으로 바뀌는지 `src/main/resources/application.yml`에서 확인한다 (SC-008, SCL-01~03)
 - [ ] T133 [P] 개인정보 처리방침 화면을 `src/main/resources/static/privacy.html`에 만든다(4.6 표 기준, 판매·제공 없음)
 - [ ] T134 이 문서 저장소에 `specs/001-main-blog/quickstart.md`(실행·검증 절차)와 `specs/001-main-blog/contracts/`(local에서 받은 `/v3/api-docs` OpenAPI 명세, D-112)를 만들고 `/speckit-analyze`로 스펙·계획·작업이 맞는지 확인한다
-- [ ] T139 DB 백업을 만든다: `ops/backup/db-backup.sh`(mysqldump `--single-transaction` 전체 백업, 매일 03:00 Asia/Seoul cron, 서버 밖 저장소로 복사, 7일 지난 파일 삭제, 운영자만 읽기)와 복구 절차 `ops/backup/RESTORE.md`. 전날 백업으로 빈 DB를 복구해 `/actuator/health`가 UP인지 확인한다 (OPS-01, SC-010, D-101)
+- [ ] T139 DB 백업을 만든다: 서버의 `ops/backup/db-backup.sh`(mysqldump `--single-transaction` 전체 백업, 서버에 7일치 남기고 지난 파일 삭제, 그 계정만 읽기)와, 매일 03:00 Asia/Seoul(cron 18:00 UTC)에 서버에 ssh로 접속해 이 스크립트를 돌리고 받은 파일을 저장소 비밀값 `BACKUP_PASSPHRASE`로 AES-256 암호화해 Actions 아티팩트로 7일 보관하는 Backup 워크플로 `.github/workflows/backup.yml`, 복구 절차 `ops/backup/RESTORE.md`. 전날 백업으로 빈 DB를 복구해 `/actuator/health`가 UP인지 확인한다 (OPS-01, SC-010, D-101, D-121)
 - [ ] T140 [P] 지원 브라우저 확인: 가입, 로그인, 블로그 만들기, 글쓰기(Toast UI Editor), 글 상세, 알림 화면을 Windows·Mac Chrome, Mac Safari, Android Chrome, iPhone Safari 최신 버전에서 확인하고 깨지는 곳을 고친다 (OPS-06, D-106)
 - [ ] T141 [P] 오류·로그 점검: 없는 주소, 잘못된 입력, 일부러 낸 서버 오류의 응답과 화면에 스택 트레이스·SQL이 없는지 `src/test/java/com/blog/common/ErrorResponseTest.java`로 확인하고, 가입·로그인 실패·비밀번호 재설정을 한 번씩 한 뒤 로그 파일에 비밀번호·토큰·인증번호가 없는지 검색한다 (OPS-02, OPS-03, SC-009)
 - [ ] T147 [P] 남은 성공 기준 자동 테스트를 만든다: 가입·비밀번호 찾기 응답이 가입된 이메일과 없는 이메일에서 같은지(`src/test/java/com/blog/auth/AccountEnumerationTest.java`, SC-003), 회원·블로그·글 API 응답에 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지(`src/test/java/com/blog/common/MaskingResponseTest.java`, SC-004), 같은 사람이 같은 날 같은 글을 여러 번 열면 조회수가 1만 오르는지(`src/test/java/com/blog/board/ViewCountTest.java`, SC-007), prod 프로필에서 Swagger 주소가 404이고 로그인 쿠키에 Secure가 붙으며 JWT 비밀키가 없으면 서버가 뜨지 않는지(`src/test/java/com/blog/common/ProdProfileTest.java`, SC-011) (OPS-09, D-109)
@@ -329,7 +329,11 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T149 [P] 마스코트 그림 18종(동물 10종, 물건 8종)의 픽셀 그림과 움직임을 `src/main/resources/static/img/mascot/`와 `static/js/mascot.js`에 만들고, 색 6가지로 다시 칠하기와 모자 8가지·장식 6가지 그림을 더한다. 블로그 첫 화면(`static/blog.html`, `static/js/blog.js`)에는 제목 옆에 크게, 메인·내 블로그 목록의 블로그 카드(`static/js/blog-list.js`, `static/my-blogs.html`)에는 이름 앞에 작게 보여 주고, `mascot`이 NULL이면 기본 그림을 보여 준다 (BLG-14, D-116)
 - [ ] T150 [P] 화면 디자인을 정돈된 목록형(흰 바탕, 회색 구분선, 포인트 빨강 `#f04452`, 목록 중심)으로 `src/main/resources/static/css/common.css`에서 바꾸고, 밝은/어두운 모드를 CSS 변수로 둔다. 처음에는 `prefers-color-scheme`을 따르고, `static/js/layout.js`의 상단 메뉴 버튼으로 바꾸면 그 브라우저의 localStorage에 기억한다(로그인과 무관, 서버 변경 없음). 바꾼 뒤 T140의 브라우저에서 두 모드를 확인한다 (D-117)
 - [ ] T151 기본 대표 픽셀 장면을 만든다: Flyway로 `blogs.cover_scene VARCHAR(60) NULL`을 `mascot` 뒤에 추가하고(T148과 같은 V3), `MascotService`가 마스코트와 함께 Claude에게 장면·시간·날씨·색을 고르게 해 `study.night.rain.mint.4821`처럼 저장한다. 배치 번호는 저장할 때마다 새로 뽑고, Claude를 못 쓰면 마스코트 바탕에 맞는 장면을 쓴다. `mascot`이나 `cover_scene`이 NULL인 블로그는 예약 작업이 채운다. `static/js/pixel-cover.js`가 192x80 픽셀 장면 14가지를 그리고 움직이며(화면 밖이나 움직임 줄이기 설정이면 멈춤), 대표 이미지가 없는 블로그의 첫 화면(`static/blog.html`, `static/js/blog.js`)과 블로그 카드(`static/js/blog-card.js`)에 보여 준다. 블로그 응답 DTO에 `coverScene`을 넣는다 (BLG-15, D-119)
+- [ ] T155 Claude가 그린 대표 그림: `src/main/java/com/blog/blog/service/CoverArtService.java`가 블로그 만들기(T044) 저장이 커밋된 뒤 비동기로, 블로그장이 대표 이미지를 올리지 않았으면 블로그 이름과 태그만 Claude API(`ANTHROPIC_API_KEY`)에 보내 글자 없는 가로 그림 SVG(viewBox 1200×500)를 그리게 한다. `SvgSanitizer.java`는 허용한 요소·속성만 남기고(script·foreignObject·style·text·image·a, on* 속성, href·xlink:href, 외부 `url()` 제거), DOCTYPE·엔티티가 있거나 200KB를 넘거나 XML로 읽히지 않으면 버린다. 통과한 SVG는 `FileStorage`(SCL-02)에 UUID 이름으로 저장하고 `blogs.cover_image`에 경로를 넣는다. 그사이 블로그장이 이미지를 올렸으면 저장하지 않는다. 이 그림은 `image/svg+xml`과 `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox`, `X-Content-Type-Options: nosniff`로 보낸다. 이름·태그 수정(T053)에서는 다시 그리지 않고, 기존 블로그는 채우지 않는다. 블로그장이 대표 이미지를 지우면 `cover_image`를 NULL로 두고 픽셀 장면(T151)이 보인다. 회원 업로드(T062, T044의 대표 이미지)는 그대로 SVG를 거부한다. 테스트: 키가 없거나 호출이 실패하면 `cover_image`가 NULL이고 픽셀 장면이 보이는지, script·onload·외부 url()·DOCTYPE이 든 SVG가 걸러지거나 버려지는지, 블로그장이 올린 이미지를 덮어쓰지 않는지 (BLG-15, BRD-05, D-126)
 - [ ] T152 무중단 배포: `deploy/deploy.sh`를 블루그린으로 바꾼다. 받은 포트에 전용 프록시(nginx 컨테이너)를 두고 서버 컨테이너 blue/green을 번갈아 띄우며, 새 버전이 UP이면 프록시를 reload해 넘기고 옛 버전을 graceful하게 내린다. 새 버전이 안 뜨면 새 버전만 지운다 (OPS-13, D-120)
+- [ ] T156 릴리즈 노트: 별도 워크플로(`.github/workflows/release.yml`)가 운영 서버 배포(Deploy, T152)가 성공한 뒤 배포한 커밋에 GitHub Release를 만든다. 버전은 가장 최근 `v*` 태그의 마지막 자리를 1 올리고(태그가 없으면 v1.0.0), 그 커밋에 이미 릴리즈 태그가 있으면 새로 만들지 않는다. 내용은 GitHub 자동 릴리즈 노트(이전 릴리즈 뒤로 merge된 PR 제목)로 만들고, `.github/release.yml`에서 `dependencies` 라벨(Dependabot PR, T142)을 따로 묶는다. 배포가 실패하면 릴리즈를 만들지 않는다 (OPS-14, D-127)
+- [ ] T153 메인 관리자 권한: `src/main/java/com/blog/common/security/BlogAuthz.java`에서 `role = ADMIN`이면 폐쇄되지 않은 모든 블로그의 관리 권한(정보·대표 이미지·카테고리·공유 링크 수정, 참여 승인·거절, 멤버 경고·정지·강제 퇴장·해제, 블랙리스트, 글·댓글 관리, 블로그 안 신고 처리, 부블로그장 지정·권한 변경, 폐쇄·철회)을 블로그장과 같이 주고, 위임은 그 블로그의 진짜 블로그장(`blog_members.role = OWNER`)만 하게 한다. 관리만 하는 블로그에는 `blog_members`에 넣지 않는다. 관리자도 블로그 관리 화면에 들어가고 비공개 블로그를 읽게 한다. `AccountGuard`(T018)는 관리자에게 일반 회원 활동(블로그 만들기, 참여 신청, 참여한 블로그의 글쓰기, 댓글, 좋아요, 팔로우, 구독, 차단)을 모두 허용하고, 블로그 개수 제한(T045)에서 관리자를 뺀다. 글쓰기는 관리자도 그 블로그의 멤버여야 한다. 블로그 화면에서 관리자가 남의 블로그를 폐쇄하면 `close_reason = ADMIN`으로, 자기 블로그면 `OWNER`로 저장한다. 관리자 조치는 AdminActionLogger(T116)로 기록한다. 테스트: 관리자가 남의 블로그에서 멤버 정지·신고 처리·비공개 글 읽기가 되고 위임은 막히며, 블로그 만들기(4개째 공개 블로그 포함)·참여 신청·참여한 블로그의 글쓰기·댓글·좋아요·팔로우·구독이 되고, 참여하지 않은 블로그의 글쓰기는 막히며, 직접 만든 블로그는 위임·폐쇄(OWNER)가 되고 남의 블로그 폐쇄는 ADMIN으로 기록되는지 (SEC-09, BLG-10, ADM-02, D-122)
+- [ ] T154 블로그장 위임 요청 취소: `POST /api/blogs/{blogId}/transfers/pending/cancel`을 TransferService(T087)에 만들고 PENDING → CANCELED, 받는 멤버에게 "위임 요청 취소" 알림을 보낸다. 대기 중인 요청이 있으면 새 요청을 막고 "이미 ○○님에게 보낸 요청이 있어요 (언제까지)"를 돌려주며(D-123), 받는 멤버가 블로그를 떠나면 요청을 CANCELED로 바꾼다. 관리 화면(`static/js/blog-admin-close.js`)에 "요청 취소" 버튼을 둔다. 그 블로그에서 정지 중인 멤버의 블로그 탈퇴를 막는다(D-125). 테스트: 취소와 알림, 두 번째 요청 거부, 정지 중 탈퇴 거부 (BLG-07, BLG-08, D-123, D-124, D-125)
 
 ---
 
@@ -341,7 +345,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - **Foundational (Phase 2)**: Setup이 끝나야 함. 모든 사용자 스토리를 막음
 - **User Stories (Phase 3~11)**: Foundational이 끝나면 시작
 - **Polish (Phase 12)**: 원하는 스토리가 끝난 뒤
-- **마스코트·화면 디자인 (Phase 13)**: T148은 US2(블로그 만들기 T044, 정보 수정 T053)와 ShedLock(T024) 뒤, T149는 T148(응답의 `mascot`)과 US2 화면(T054, T055) 뒤, T150은 공통 화면 틀(T027) 뒤면 언제든
+- **마스코트·화면 디자인 (Phase 13)**: T148은 US2(블로그 만들기 T044, 정보 수정 T053)와 ShedLock(T024) 뒤, T149는 T148(응답의 `mascot`)과 US2 화면(T054, T055) 뒤, T150은 공통 화면 틀(T027) 뒤면 언제든, T155는 T044·T151 뒤, T156은 T152 뒤
 
 ### User Story Dependencies
 
@@ -416,7 +420,7 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 4. US6·US7·US8 → 계정 찾기, 소셜, 알림
 5. US9 → 메인 관리자
 6. Polish → 권한 통합 테스트 T127 등
-7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119), 무중단 배포 → T152 (D-120)
+7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119), Claude가 그린 대표 그림 → T155 (D-126), 무중단 배포 → T152 (D-120), 릴리즈 노트 → T156 (D-127), 메인 관리자 권한·위임 요청 취소 → T153~T154 (D-122~D-125)
 
 ### Parallel Team Strategy
 
@@ -430,9 +434,11 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 
 ## Notes
 
-- 작업 수 152개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인 4, 무중단 배포 1)
+- 작업 수 156개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인·대표 그림 5, 무중단 배포·릴리즈 노트 2, 메인 관리자 권한·위임 요청 취소 2)
 - T135~T147은 운영 요구사항(OPS, D-101~D-112)을 넣으며 뒤에 붙인 번호라 단계 안의 번호 순서와 실행 순서가 다를 수 있다. 단계는 각 작업이 놓인 Phase를 따른다
 - T148~T151은 블로그 마스코트(BLG-14, D-116, D-118), 화면 디자인(D-117), 기본 대표 픽셀 장면(BLG-15, D-119)을 정하며 Phase 13으로 붙였다
+- T153~T154는 메인 관리자 권한(D-122)과 위임 요청 취소·정지 중 탈퇴 불가(D-123~D-125)를 정하며 Phase 13 끝에 붙였다. T153은 T017·T018·T045·T116 뒤, T154는 T087·T093 뒤
+- T155(대표 그림, D-126)는 T151 바로 다음에, T156(릴리즈 노트, D-127)은 T152 바로 다음에 두어 번호와 놓인 순서가 다르다. T155는 T044·T151 뒤, T156은 T152 뒤
 - 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL, OPS)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
 - 테이블·컬럼을 바꿔야 하면 코드보다 먼저 이 저장소의 `erd_tables.sql`과 관련 파일을 고친다(CLAUDE.md)
 - 작업 하나나 묶음마다 커밋하고, Checkpoint에서 스토리를 따로 확인한다
