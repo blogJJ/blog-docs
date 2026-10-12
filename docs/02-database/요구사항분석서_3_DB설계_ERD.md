@@ -421,7 +421,7 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | name | VARCHAR(50) |  | X |  | 블로그 이름 (중복 허용) |
 | description | VARCHAR(500) |  | O |  | 소개 |
 | cover_image | VARCHAR(255) |  | O |  | 대표 이미지 경로 |
-| mascot | VARCHAR(20) |  | O |  | 마스코트 픽셀 동물 (bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl). NULL이면 아직 안 고름 (D-116) |
+| mascot | VARCHAR(20) |  | O |  | 마스코트 픽셀 그림 (동물 bear·cat·dog·rabbit·fox·penguin·bird·frog·hamster·owl, 물건 computer·camera·book·plane·headphones·gamepad·coffee·cake). NULL이면 아직 안 고름 (D-116) |
 | visibility | ENUM('PUBLIC','LINK_ONLY','PRIVATE') |  | X | 'PUBLIC' | 공개 / 일부 공개 / 비공개 |
 | share_key | VARCHAR(64) | UK | O |  | 일부 공개 공유 링크의 무작위 값. 새로 만들면 이전 값 무효 |
 | join_policy | ENUM('OPEN','APPROVAL') |  | X | 'OPEN' | 자유 참여 / 승인제 |
