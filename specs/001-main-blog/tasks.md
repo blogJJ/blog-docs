@@ -329,6 +329,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T149 [P] 마스코트 그림 18종(동물 10종, 물건 8종)의 픽셀 그림과 움직임을 `src/main/resources/static/img/mascot/`와 `static/js/mascot.js`에 만들고, 색 6가지로 다시 칠하기와 모자 8가지·장식 6가지 그림을 더한다. 블로그 첫 화면(`static/blog.html`, `static/js/blog.js`)에는 제목 옆에 크게, 메인·내 블로그 목록의 블로그 카드(`static/js/blog-list.js`, `static/my-blogs.html`)에는 이름 앞에 작게 보여 주고, `mascot`이 NULL이면 기본 그림을 보여 준다 (BLG-14, D-116)
 - [ ] T150 [P] 화면 디자인을 정돈된 목록형(흰 바탕, 회색 구분선, 포인트 빨강 `#f04452`, 목록 중심)으로 `src/main/resources/static/css/common.css`에서 바꾸고, 밝은/어두운 모드를 CSS 변수로 둔다. 처음에는 `prefers-color-scheme`을 따르고, `static/js/layout.js`의 상단 메뉴 버튼으로 바꾸면 그 브라우저의 localStorage에 기억한다(로그인과 무관, 서버 변경 없음). 바꾼 뒤 T140의 브라우저에서 두 모드를 확인한다 (D-117)
 - [ ] T151 기본 대표 픽셀 장면을 만든다: Flyway로 `blogs.cover_scene VARCHAR(60) NULL`을 `mascot` 뒤에 추가하고(T148과 같은 V3), `MascotService`가 마스코트와 함께 Claude에게 장면·시간·날씨·색을 고르게 해 `study.night.rain.mint.4821`처럼 저장한다. 배치 번호는 저장할 때마다 새로 뽑고, Claude를 못 쓰면 마스코트 바탕에 맞는 장면을 쓴다. `mascot`이나 `cover_scene`이 NULL인 블로그는 예약 작업이 채운다. `static/js/pixel-cover.js`가 192x80 픽셀 장면 14가지를 그리고 움직이며(화면 밖이나 움직임 줄이기 설정이면 멈춤), 대표 이미지가 없는 블로그의 첫 화면(`static/blog.html`, `static/js/blog.js`)과 블로그 카드(`static/js/blog-card.js`)에 보여 준다. 블로그 응답 DTO에 `coverScene`을 넣는다 (BLG-15, D-119)
+- [ ] T152 무중단 배포: `deploy/deploy.sh`를 블루그린으로 바꾼다. 받은 포트에 전용 프록시(nginx 컨테이너)를 두고 서버 컨테이너 blue/green을 번갈아 띄우며, 새 버전이 UP이면 프록시를 reload해 넘기고 옛 버전을 graceful하게 내린다. 새 버전이 안 뜨면 새 버전만 지운다 (OPS-13, D-120)
 
 ---
 
@@ -415,7 +416,7 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 4. US6·US7·US8 → 계정 찾기, 소셜, 알림
 5. US9 → 메인 관리자
 6. Polish → 권한 통합 테스트 T127 등
-7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119)
+7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119), 무중단 배포 → T152 (D-120)
 
 ### Parallel Team Strategy
 
@@ -429,7 +430,7 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 
 ## Notes
 
-- 작업 수 151개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인 4)
+- 작업 수 152개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인 4, 무중단 배포 1)
 - T135~T147은 운영 요구사항(OPS, D-101~D-112)을 넣으며 뒤에 붙인 번호라 단계 안의 번호 순서와 실행 순서가 다를 수 있다. 단계는 각 작업이 놓인 Phase를 따른다
 - T148~T151은 블로그 마스코트(BLG-14, D-116, D-118), 화면 디자인(D-117), 기본 대표 픽셀 장면(BLG-15, D-119)을 정하며 Phase 13으로 붙였다
 - 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL, OPS)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
