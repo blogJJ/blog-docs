@@ -319,7 +319,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T141 [P] 오류·로그 점검: 없는 주소, 잘못된 입력, 일부러 낸 서버 오류의 응답과 화면에 스택 트레이스·SQL이 없는지 `src/test/java/com/blog/common/ErrorResponseTest.java`로 확인하고, 가입·로그인 실패·비밀번호 재설정을 한 번씩 한 뒤 로그 파일에 비밀번호·토큰·인증번호가 없는지 검색한다 (OPS-02, OPS-03, SC-009)
 - [ ] T147 [P] 남은 성공 기준 자동 테스트를 만든다: 가입·비밀번호 찾기 응답이 가입된 이메일과 없는 이메일에서 같은지(`src/test/java/com/blog/auth/AccountEnumerationTest.java`, SC-003), 회원·블로그·글 API 응답에 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지(`src/test/java/com/blog/common/MaskingResponseTest.java`, SC-004), 같은 사람이 같은 날 같은 글을 여러 번 열면 조회수가 1만 오르는지(`src/test/java/com/blog/board/ViewCountTest.java`, SC-007), prod 프로필에서 Swagger 주소가 404이고 로그인 쿠키에 Secure가 붙으며 JWT 비밀키가 없으면 서버가 뜨지 않는지(`src/test/java/com/blog/common/ProdProfileTest.java`, SC-011) (OPS-09, D-109)
 
-## Phase 13: 블로그 마스코트와 화면 디자인 (D-116~D-118)
+## Phase 13: 블로그 마스코트와 화면 디자인 (D-116~D-119)
 
 **Purpose**: 2026-10-12에 정한 블로그 마스코트(BLG-14)와 정돈된 목록형 화면·밝은/어두운 모드를 넣는다
 
@@ -328,6 +328,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T148 블로그 마스코트 고르기를 만든다: Flyway `src/main/resources/db/migration/V3__blog_mascot.sql`로 `blogs.mascot VARCHAR(40) NULL`을 `cover_image` 뒤에 추가하고(`erd_tables.sql` 기준, 이미 V3가 있으면 다음 번호), `Blog` 엔티티에 필드를 넣는다. `src/main/java/com/blog/blog/service/MascotService.java`가 블로그 만들기(T044)·정보 수정(T053) 저장이 커밋된 뒤 비동기로 블로그 이름과 태그만 Claude API에 보내 18종, 동물 10종(bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl)과 물건 8종(computer, camera, book, plane, headphones, gamepad, coffee, cake) 중 하나를 고른다(소개·글 내용은 보내지 않음). 주제가 물건과 뚜렷하게 맞으면 물건(개발 → computer, 사진 → camera, 독서 → book), 아니면 동물을 고르게 프롬프트에 적는다. API 키(환경변수 `ANTHROPIC_API_KEY`)가 없거나 호출이 실패하거나 목록에 없는 답이 오면 태그 단어 사전(`MascotDictionary.java`)으로, 맞는 단어도 없으면 이름의 해시로 정한 기본값을 쓴다. `mascot`이 NULL인 기존 블로그는 `@Scheduled` + `@SchedulerLock` 예약 작업이 한 번에 조금씩 채운다. Claude는 바탕과 함께 색·모자·장식도 고르고, 폐쇄되지 않은 다른 블로그나 이 블로그의 지금 값과 같은 조합이면 같은 바탕 안의 비어 있는 조합으로 바꿔 `bear.mint.beret.heart`처럼 저장한다(단어 사전으로 고를 때는 색·모자·장식을 이름·태그로 정함). 블로그 응답 DTO에 `mascot`을 넣는다 (BLG-14, D-116, D-118)
 - [ ] T149 [P] 마스코트 그림 18종(동물 10종, 물건 8종)의 픽셀 그림과 움직임을 `src/main/resources/static/img/mascot/`와 `static/js/mascot.js`에 만들고, 색 6가지로 다시 칠하기와 모자 8가지·장식 6가지 그림을 더한다. 블로그 첫 화면(`static/blog.html`, `static/js/blog.js`)에는 제목 옆에 크게, 메인·내 블로그 목록의 블로그 카드(`static/js/blog-list.js`, `static/my-blogs.html`)에는 이름 앞에 작게 보여 주고, `mascot`이 NULL이면 기본 그림을 보여 준다 (BLG-14, D-116)
 - [ ] T150 [P] 화면 디자인을 정돈된 목록형(흰 바탕, 회색 구분선, 포인트 빨강 `#f04452`, 목록 중심)으로 `src/main/resources/static/css/common.css`에서 바꾸고, 밝은/어두운 모드를 CSS 변수로 둔다. 처음에는 `prefers-color-scheme`을 따르고, `static/js/layout.js`의 상단 메뉴 버튼으로 바꾸면 그 브라우저의 localStorage에 기억한다(로그인과 무관, 서버 변경 없음). 바꾼 뒤 T140의 브라우저에서 두 모드를 확인한다 (D-117)
+- [ ] T151 기본 대표 픽셀 장면을 만든다: Flyway로 `blogs.cover_scene VARCHAR(60) NULL`을 `mascot` 뒤에 추가하고(T148과 같은 V3), `MascotService`가 마스코트와 함께 Claude에게 장면·시간·날씨·색을 고르게 해 `study.night.rain.mint.4821`처럼 저장한다. 배치 번호는 저장할 때마다 새로 뽑고, Claude를 못 쓰면 마스코트 바탕에 맞는 장면을 쓴다. `mascot`이나 `cover_scene`이 NULL인 블로그는 예약 작업이 채운다. `static/js/pixel-cover.js`가 192x80 픽셀 장면 14가지를 그리고 움직이며(화면 밖이나 움직임 줄이기 설정이면 멈춤), 대표 이미지가 없는 블로그의 첫 화면(`static/blog.html`, `static/js/blog.js`)과 블로그 카드(`static/js/blog-card.js`)에 보여 준다. 블로그 응답 DTO에 `coverScene`을 넣는다 (BLG-15, D-119)
 
 ---
 
@@ -414,7 +415,7 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 4. US6·US7·US8 → 계정 찾기, 소셜, 알림
 5. US9 → 메인 관리자
 6. Polish → 권한 통합 테스트 T127 등
-7. 마스코트·화면 디자인 → T148~T150 (D-116~D-118)
+7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119)
 
 ### Parallel Team Strategy
 
@@ -428,9 +429,9 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 
 ## Notes
 
-- 작업 수 150개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인 3)
+- 작업 수 151개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인 4)
 - T135~T147은 운영 요구사항(OPS, D-101~D-112)을 넣으며 뒤에 붙인 번호라 단계 안의 번호 순서와 실행 순서가 다를 수 있다. 단계는 각 작업이 놓인 Phase를 따른다
-- T148~T150은 블로그 마스코트(BLG-14, D-116, D-118)와 화면 디자인(D-117)을 정하며 Phase 13으로 붙였다
+- T148~T151은 블로그 마스코트(BLG-14, D-116, D-118), 화면 디자인(D-117), 기본 대표 픽셀 장면(BLG-15, D-119)을 정하며 Phase 13으로 붙였다
 - 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL, OPS)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
 - 테이블·컬럼을 바꿔야 하면 코드보다 먼저 이 저장소의 `erd_tables.sql`과 관련 파일을 고친다(CLAUDE.md)
 - 작업 하나나 묶음마다 커밋하고, Checkpoint에서 스토리를 따로 확인한다

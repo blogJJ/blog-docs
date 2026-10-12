@@ -422,6 +422,7 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | description | VARCHAR(500) |  | O |  | 소개 |
 | cover_image | VARCHAR(255) |  | O |  | 대표 이미지 경로 |
 | mascot | VARCHAR(40) |  | O |  | 마스코트 픽셀 그림 조합 바탕.색.모자.장식 (예: bear.mint.beret.heart). 바탕은 동물 10종·물건 8종. 다른 블로그와 겹치지 않게 만든다. NULL이면 아직 안 만듦 (D-116, D-118) |
+| cover_scene | VARCHAR(60) |  | O |  | 대표 이미지가 없을 때 보여 줄 픽셀 장면 장면.시간.날씨.색.배치번호 (예: study.night.rain.mint.4821). 배치 번호는 만들 때마다 새로 뽑는다. NULL이면 아직 안 만듦 (D-119) |
 | visibility | ENUM('PUBLIC','LINK_ONLY','PRIVATE') |  | X | 'PUBLIC' | 공개 / 일부 공개 / 비공개 |
 | share_key | VARCHAR(64) | UK | O |  | 일부 공개 공유 링크의 무작위 값. 새로 만들면 이전 값 무효 |
 | join_policy | ENUM('OPEN','APPROVAL') |  | X | 'OPEN' | 자유 참여 / 승인제 |
