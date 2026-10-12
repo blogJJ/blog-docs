@@ -63,6 +63,17 @@ ERDCloud에서 테이블과 컬럼마다 **물리 이름 = 영어(DB에 실제�
 | revoked_at | 폐기 시각 |
 | created_at | 생성 시각 |
 
+## user_social_accounts → 소셜 로그인 연결
+
+| 물리 이름 (영어) | 논리 이름 (한글) |
+| --- | --- |
+| id | 번호 |
+| user_id | 회원 번호 |
+| provider | 제공자 |
+| provider_user_id | 제공자 회원 번호 |
+| email_at_link | 연결 때 이메일 |
+| created_at | 연결 시각 |
+
 ## blogs → 블로그
 
 | 물리 이름 (영어) | 논리 이름 (한글) |
