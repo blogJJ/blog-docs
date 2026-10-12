@@ -20,7 +20,7 @@
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `users` | 회원 | USR-01~08, SEC-01~03, ADM-08 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 블로그 만들기·참여·글·댓글·좋아요 불가, 메인 공지·관리와 구독·팔로우만. 모든 블로그에서 블로그장과 같은 관리 권한(위임 제외)을 갖지만 `blog_members`에는 넣지 않음, D-90, D-122), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각, `suspended_until`(메인 관리자 계정 정지, 영구는 9999-12-31, D-99) |
+| `users` | 회원 | USR-01~08, SEC-01~03, ADM-08 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 일반 회원 활동을 모두 하고 블로그 개수 제한이 없음. 직접 만들거나 참여한 블로그에서만 `blog_members`에 들어가고, 그 밖의 모든 블로그에서도 블로그장과 같은 관리 권한(남의 블로그 위임 제외)을 가짐, D-122), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각, `suspended_until`(메인 관리자 계정 정지, 영구는 9999-12-31, D-99) |
 | `verification_codes` | 이메일 인증번호 | USR-02, USR-06 | 회원 번호 대신 `email` 기준. `purpose` SIGNUP(10분)/PASSWORD_RESET(30분), `code_hash`, `fail_count`(5번 무효), `verified_at`, `used_at`(1회용) |
 | `account_find_tokens` | 이메일 찾기 임시 토큰 | USR-08 | `token_hash`, 10분 만료 |
 | `refresh_tokens` | Refresh Token | SEC-04, USR-04 | `token_hash`, `remember_me`(14일/30분), `user_agent`, `revoked_at`(로그아웃·비밀번호 변경) |
@@ -29,7 +29,7 @@
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `blogs` | 블로그 | BLG-01~03, 09, 10, 14, 15, ADM-02 | `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL, D-86), `mascot`(픽셀 그림 조합 `바탕.색.모자.장식`, 바탕은 동물 10종·물건 8종, 다른 블로그와 겹치지 않음, NULL이면 아직 안 만듦, D-116, D-118), `cover_scene`(대표 이미지가 없을 때의 픽셀 장면 `장면.시간.날씨.색.배치번호`, NULL이면 아직 안 만듦, D-119), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`(일부 공개 링크 무작위 값), `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at` |
+| `blogs` | 블로그 | BLG-01~03, 09, 10, 14, 15, ADM-02 | `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL, D-86), `cover_image`(블로그장이 올린 이미지, 올리지 않은 새 블로그는 Claude가 그려 걸러 낸 SVG, 지우면 NULL, D-126), `mascot`(픽셀 그림 조합 `바탕.색.모자.장식`, 바탕은 동물 10종·물건 8종, 다른 블로그와 겹치지 않음, NULL이면 아직 안 만듦, D-116, D-118), `cover_scene`(대표 이미지가 없을 때의 픽셀 장면 `장면.시간.날씨.색.배치번호`, NULL이면 아직 안 만듦, D-119), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`(일부 공개 링크 무작위 값), `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at` |
 | `blog_members` | 블로그 멤버 | BLG-04~08, 13, SEC-07 | `role` OWNER/MANAGER/MEMBER, `manager_since`(자동 위임 순서), `suspended_until`(영구는 9999-12-31), `suspension_count`(3번이면 표시) |
 | `blog_manager_permissions` | 부블로그장 권한 | 2장, D-71 | `permission` EDIT_INFO/MANAGE_MEMBERS/MANAGE_POSTS |
 | `blog_join_requests` | 참여 신청 | BLG-04, 05 | `status` PENDING/APPROVED/REJECTED/CANCELED, `handled_at`(거절 7일 뒤 재신청 기준) |
@@ -90,7 +90,7 @@ ACTIVE ──폐쇄 버튼(BLG-09) / 관리자 강제 폐쇄(ADM-02, D-96) / 블
 
 - CLOSING 중에도 글쓰기·댓글은 평소처럼 된다(D-67). 위임은 막힌다(D-20).
 - CLOSING으로 바뀌면 대기 중인 위임 요청은 CANCELED.
-- `close_reason`: OWNER(블로그장 폐쇄), OWNER_DEMOTED(권한 박탈), ADMIN(강제 폐쇄).
+- `close_reason`: OWNER(블로그장 폐쇄, 메인 관리자가 자기 블로그를 닫을 때 포함), OWNER_DEMOTED(권한 박탈), ADMIN(강제 폐쇄, 메인 관리자가 블로그 화면에서 남의 블로그를 닫을 때 포함, D-122).
 
 ### 참여 신청 (`blog_join_requests.status`)
 
