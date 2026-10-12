@@ -351,7 +351,7 @@ erDiagram
 | phone | VARCHAR(11) |  | O |  | 숫자만. 1차는 중복 허용. 탈퇴 30일 뒤 NULL |
 | profile_image | VARCHAR(255) |  | O |  | 프로필 사진 저장 경로 (UUID 이름) |
 | bio | VARCHAR(200) |  | O |  | 소개 |
-| role | ENUM('USER','ADMIN') |  | X | 'USER' | ADMIN = 메인 관리자 (블로그 활동은 못 함, D-90) |
+| role | ENUM('USER','ADMIN') |  | X | 'USER' | ADMIN = 메인 관리자 (모든 블로그 관리, 멤버 활동은 못 함, D-90·D-122) |
 | status | ENUM('ACTIVE','WITHDRAWN') |  | X | 'ACTIVE' | 탈퇴하면 행을 지우지 않고 WITHDRAWN |
 | suspended_until | DATETIME |  | O |  | 메인 관리자 계정 정지가 끝나는 시각 (ADM-08). 영구 정지는 9999-12-31. 정지 아니면 NULL |
 | login_fail_count | INT |  | X | 0 | 연속 로그인 실패 횟수 (5회면 잠금, 3회부터 CAPTCHA) |
