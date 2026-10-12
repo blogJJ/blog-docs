@@ -58,6 +58,7 @@ CREATE TABLE `blogs` (
 	`name`	VARCHAR(50)	NOT NULL	COMMENT '블로그 이름 (중복 허용)',
 	`description`	VARCHAR(500)	NULL	COMMENT '소개',
 	`cover_image`	VARCHAR(255)	NULL	COMMENT '대표 이미지 경로',
+	`mascot`	VARCHAR(20)	NULL	COMMENT '마스코트 픽셀 동물 (bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl). NULL이면 아직 안 고름 (D-116)',
 	`visibility`	ENUM('PUBLIC', 'LINK_ONLY', 'PRIVATE')	NOT NULL	DEFAULT 'PUBLIC'	COMMENT '공개 / 일부 공개 / 비공개',
 	`share_key`	VARCHAR(64)	NULL	COMMENT '일부 공개 공유 링크의 무작위 값. 새로 만들면 이전 값 무효',
 	`join_policy`	ENUM('OPEN', 'APPROVAL')	NOT NULL	DEFAULT 'OPEN'	COMMENT '자유 참여 / 승인제',

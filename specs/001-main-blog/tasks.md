@@ -310,7 +310,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T128 [P] 응답 개인정보 점검: 모든 API 응답 DTO를 `src/main/java/com/blog/**/api/` 기준으로 훑어 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지 확인하고, 비밀번호 칸이 어느 응답에도 없는지 확인한다 (SC-004, 4.4)
 - [ ] T129 [P] 보안 헤더와 CSP를 실제 화면(Toast UI Editor, Turnstile 스크립트 포함)에서 확인하고 `src/main/java/com/blog/common/config/SecurityConfig.java`의 CSP를 맞춘다 (SEC-12)
 - [ ] T130 [P] 동시 요청으로 공개 블로그 생성 제한이 지켜지는지 `src/test/java/com/blog/blog/BlogLimitConcurrencyTest.java`로 확인한다 (SC-006)
-- [ ] T131 메인·블로그 목록·검색 응답 시간을 측정해 1초 목표(늦어도 2초)를 넘는 쿼리에 `add_indexes.sql`의 인덱스를 Flyway `src/main/resources/db/migration/V3__query_indexes.sql`로 추가한다 (SC-001, D-48)
+- [ ] T131 메인·블로그 목록·검색 응답 시간을 측정해 1초 목표(늦어도 2초)를 넘는 쿼리에 `add_indexes.sql`의 인덱스를 다음 번호 Flyway 파일 `src/main/resources/db/migration/V{다음 번호}__query_indexes.sql`로 추가한다(T148이 먼저 V3를 쓰면 V4) (SC-001, D-48)
 - [ ] T132 [P] 서버 2대 대비 점검: 이미지 저장소·IP 요청 제한 저장소·프록시 헤더가 설정만으로 바뀌는지 `src/main/resources/application.yml`에서 확인한다 (SC-008, SCL-01~03)
 - [ ] T133 [P] 개인정보 처리방침 화면을 `src/main/resources/static/privacy.html`에 만든다(4.6 표 기준, 판매·제공 없음)
 - [ ] T134 이 문서 저장소에 `specs/001-main-blog/quickstart.md`(실행·검증 절차)와 `specs/001-main-blog/contracts/`(local에서 받은 `/v3/api-docs` OpenAPI 명세, D-112)를 만들고 `/speckit-analyze`로 스펙·계획·작업이 맞는지 확인한다
@@ -318,6 +318,16 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T140 [P] 지원 브라우저 확인: 가입, 로그인, 블로그 만들기, 글쓰기(Toast UI Editor), 글 상세, 알림 화면을 Windows·Mac Chrome, Mac Safari, Android Chrome, iPhone Safari 최신 버전에서 확인하고 깨지는 곳을 고친다 (OPS-06, D-106)
 - [ ] T141 [P] 오류·로그 점검: 없는 주소, 잘못된 입력, 일부러 낸 서버 오류의 응답과 화면에 스택 트레이스·SQL이 없는지 `src/test/java/com/blog/common/ErrorResponseTest.java`로 확인하고, 가입·로그인 실패·비밀번호 재설정을 한 번씩 한 뒤 로그 파일에 비밀번호·토큰·인증번호가 없는지 검색한다 (OPS-02, OPS-03, SC-009)
 - [ ] T147 [P] 남은 성공 기준 자동 테스트를 만든다: 가입·비밀번호 찾기 응답이 가입된 이메일과 없는 이메일에서 같은지(`src/test/java/com/blog/auth/AccountEnumerationTest.java`, SC-003), 회원·블로그·글 API 응답에 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지(`src/test/java/com/blog/common/MaskingResponseTest.java`, SC-004), 같은 사람이 같은 날 같은 글을 여러 번 열면 조회수가 1만 오르는지(`src/test/java/com/blog/board/ViewCountTest.java`, SC-007), prod 프로필에서 Swagger 주소가 404이고 로그인 쿠키에 Secure가 붙으며 JWT 비밀키가 없으면 서버가 뜨지 않는지(`src/test/java/com/blog/common/ProdProfileTest.java`, SC-011) (OPS-09, D-109)
+
+## Phase 13: 블로그 마스코트와 화면 디자인 (D-116, D-117)
+
+**Purpose**: 2026-10-12에 정한 블로그 마스코트(BLG-14)와 정돈된 목록형 화면·밝은/어두운 모드를 넣는다
+
+**Independent Test**: 태그가 "고양이"인 블로그를 만들면 저장은 바로 끝나고 잠시 뒤 블로그 화면과 블로그 카드에 픽셀 동물이 나타난다. API 키 없이 띄워도 태그 단어 사전으로 골라진다. 상단 메뉴의 버튼으로 어두운 모드로 바꾸고 새로고침해도 유지된다
+
+- [ ] T148 블로그 마스코트 고르기를 만든다: Flyway `src/main/resources/db/migration/V3__blog_mascot.sql`로 `blogs.mascot VARCHAR(20) NULL`을 `cover_image` 뒤에 추가하고(`erd_tables.sql` 기준, 이미 V3가 있으면 다음 번호), `Blog` 엔티티에 필드를 넣는다. `src/main/java/com/blog/blog/service/MascotService.java`가 블로그 만들기(T044)·정보 수정(T053) 저장이 커밋된 뒤 비동기로 블로그 이름과 태그만 Claude API에 보내 10종(bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl) 중 하나를 고른다(소개·글 내용은 보내지 않음). API 키(환경변수 `ANTHROPIC_API_KEY`)가 없거나 호출이 실패하거나 목록에 없는 답이 오면 태그 단어 사전(`MascotDictionary.java`)으로, 맞는 단어도 없으면 이름의 해시로 정한 기본값을 쓴다. `mascot`이 NULL인 기존 블로그는 `@Scheduled` + `@SchedulerLock` 예약 작업이 한 번에 조금씩 채운다. 블로그 응답 DTO에 `mascot`을 넣는다 (BLG-14, D-116)
+- [ ] T149 [P] 픽셀 동물 10종 그림과 움직임을 `src/main/resources/static/img/mascot/`와 `static/js/mascot.js`에 만든다. 블로그 첫 화면(`static/blog.html`, `static/js/blog.js`)과 메인·내 블로그 목록의 블로그 카드(`static/js/blog-list.js`, `static/my-blogs.html`)에 보여 주고, `mascot`이 NULL이면 기본 동물을 보여 준다 (BLG-14, D-116)
+- [ ] T150 [P] 화면 디자인을 정돈된 목록형(흰 바탕, 회색 구분선, 포인트 빨강 `#f04452`, 목록 중심)으로 `src/main/resources/static/css/common.css`에서 바꾸고, 밝은/어두운 모드를 CSS 변수로 둔다. 처음에는 `prefers-color-scheme`을 따르고, `static/js/layout.js`의 상단 메뉴 버튼으로 바꾸면 그 브라우저의 localStorage에 기억한다(로그인과 무관, 서버 변경 없음). 바꾼 뒤 T140의 브라우저에서 두 모드를 확인한다 (D-117)
 
 ---
 
@@ -329,6 +339,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - **Foundational (Phase 2)**: Setup이 끝나야 함. 모든 사용자 스토리를 막음
 - **User Stories (Phase 3~11)**: Foundational이 끝나면 시작
 - **Polish (Phase 12)**: 원하는 스토리가 끝난 뒤
+- **마스코트·화면 디자인 (Phase 13)**: T148은 US2(블로그 만들기 T044, 정보 수정 T053)와 ShedLock(T024) 뒤, T149는 T148(응답의 `mascot`)과 US2 화면(T054, T055) 뒤, T150은 공통 화면 틀(T027) 뒤면 언제든
 
 ### User Story Dependencies
 
@@ -363,6 +374,7 @@ Setup → Foundational → US1 → US2 → US3 ─┬─ US4 ─┐
 - Foundational: T008~T013, T019~T025, T027, T136, T146 (T014는 T010~T013 뒤, T015~T018은 T014 뒤, T026은 T025 뒤, T137은 T019 뒤, T138·T144는 T016 뒤, T145는 T144 뒤)
 - Foundational이 끝나면 US1과 함께 US6의 T095를 시작할 수 있고, US3이 끝나면 US4·US5·US7을 사람별로 나눠 동시에 할 수 있다
 - 각 스토리의 `[P]` 엔티티 작업과 `[P]` 화면 작업
+- Phase 13: T150은 T148·T149와 동시에 할 수 있다(서버를 건드리지 않음)
 
 ---
 
@@ -402,6 +414,7 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 4. US6·US7·US8 → 계정 찾기, 소셜, 알림
 5. US9 → 메인 관리자
 6. Polish → 권한 통합 테스트 T127 등
+7. 마스코트·화면 디자인 → T148~T150 (D-116, D-117)
 
 ### Parallel Team Strategy
 
@@ -415,8 +428,9 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 
 ## Notes
 
-- 작업 수 147개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12)
+- 작업 수 150개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인 3)
 - T135~T147은 운영 요구사항(OPS, D-101~D-112)을 넣으며 뒤에 붙인 번호라 단계 안의 번호 순서와 실행 순서가 다를 수 있다. 단계는 각 작업이 놓인 Phase를 따른다
+- T148~T150은 블로그 마스코트(BLG-14, D-116)와 화면 디자인(D-117)을 정하며 Phase 13으로 붙였다
 - 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL, OPS)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
 - 테이블·컬럼을 바꿔야 하면 코드보다 먼저 이 저장소의 `erd_tables.sql`과 관련 파일을 고친다(CLAUDE.md)
 - 작업 하나나 묶음마다 커밋하고, Checkpoint에서 스토리를 따로 확인한다
