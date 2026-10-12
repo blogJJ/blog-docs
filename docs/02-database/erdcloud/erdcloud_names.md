@@ -73,6 +73,8 @@ ERDCloud에서 테이블과 컬럼마다 **물리 이름 = 영어(DB에 실제�
 | name | 블로그 이름 |
 | description | 소개 |
 | cover_image | 대표 이미지 |
+| mascot | 마스코트 |
+| cover_scene | 픽셀 장면 |
 | visibility | 공개 범위 |
 | share_key | 공유 링크 값 |
 | join_policy | 참여 방식 |
