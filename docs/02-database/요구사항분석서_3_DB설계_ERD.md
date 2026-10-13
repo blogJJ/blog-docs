@@ -101,7 +101,7 @@ ERDCloud의 메모에 그대로 붙여 넣을 수 있게 글자로만 적었습�
   - idx_admin_logs_created (created_at) : 1년 지난 기록 삭제
 
 [posts] 게시글
-  - idx_posts_blog (blog_id, status, created_at) : 블로그 글 목록 최신순 (BRD-02)
+  - idx_posts_blog (blog_id, status, created_at, like_count, author_id, author_hidden) : 블로그 글 목록 최신순 (BRD-02). 메인 피드·태그 검색도 이 인덱스만으로 고르고 정렬 (D-144)
   - idx_posts_category (blog_id, category_id, status, created_at) : 카테고리별 목록
   - idx_posts_author (author_id, status, created_at) : 팔로우 피드, 내 글
   - idx_posts_feed (status, created_at) : 메인 피드 최신 글 (BRD-09)

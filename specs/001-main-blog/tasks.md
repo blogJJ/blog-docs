@@ -310,7 +310,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T128 [P] 응답 개인정보 점검: 모든 API 응답 DTO를 `src/main/java/com/blog/**/api/` 기준으로 훑어 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지 확인하고, 비밀번호 칸이 어느 응답에도 없는지 확인한다 (SC-004, 4.4)
 - [ ] T129 [P] 보안 헤더와 CSP를 실제 화면(Toast UI Editor, Turnstile 스크립트 포함)에서 확인하고 `src/main/java/com/blog/common/config/SecurityConfig.java`의 CSP를 맞춘다 (SEC-12)
 - [ ] T130 [P] 동시 요청으로 공개 블로그 생성 제한이 지켜지는지 `src/test/java/com/blog/blog/BlogLimitConcurrencyTest.java`로 확인한다 (SC-006)
-- [ ] T131 메인·블로그 목록·검색 응답 시간을 측정해 1초 목표(늦어도 2초)를 넘는 쿼리에 `add_indexes.sql`의 인덱스를 다음 번호 Flyway 파일 `src/main/resources/db/migration/V{다음 번호}__query_indexes.sql`로 추가한다(T148이 먼저 V3를 쓰면 V4) (SC-001, D-48)
+- [ ] T131 메인·블로그 목록·검색 응답 시간을 측정해 1초 목표(늦어도 2초)를 넘는 쿼리에 `add_indexes.sql`의 인덱스를 다음 번호 Flyway 파일 `src/main/resources/db/migration/V6__query_indexes.sql`로 추가하고, 큰 행을 정렬하는 쿼리는 글 번호만 먼저 고르게 바꾼다. 측정 결과는 D-144 (SC-001, D-48, D-144)
 - [ ] T132 [P] 서버 2대 대비 점검: 이미지 저장소·IP 요청 제한 저장소·프록시 헤더가 설정만으로 바뀌는지 `src/main/resources/application.yml`에서 확인한다 (SC-008, SCL-01~03)
 - [ ] T133 [P] 개인정보 처리방침 화면을 `src/main/resources/static/privacy.html`에 만든다(4.6 표 기준, 판매·제공 없음)
 - [ ] T134 이 문서 저장소에 `specs/001-main-blog/quickstart.md`(실행·검증 절차)와 `specs/001-main-blog/contracts/`(local에서 받은 `/v3/api-docs` OpenAPI 명세, D-112)를 만들고 `/speckit-analyze`로 스펙·계획·작업이 맞는지 확인한다
