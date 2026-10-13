@@ -60,7 +60,7 @@
 | `tags` | 태그 | BRD-04 | `name` 영문 소문자, 1~20자, UNIQUE |
 | `post_tags` | 글-태그 연결 | BRD-04 | `uk_post_tags`로 한 글 안 중복 방지 |
 | `post_images` | 글 이미지 | BRD-05, SEC-08 | `stored_name`(UUID), `original_name`(DB에만), `content_type`, `size_bytes`(3MB 이하), `sort_order`(첫 이미지가 공유 미리보기), 글 저장 전 업로드면 `post_id` NULL |
-| `comments` | 댓글 | BRD-06 | `parent_id`(1단계), `reply_to_user_id`(@닉네임, D-87), `content` 1~500자, `status` ACTIVE/HIDDEN/DELETED, `is_edited` |
+| `comments` | 댓글 | BRD-06 | `parent_id`(1단계), `reply_to_user_id`(@닉네임, D-87), `content` 1~500자, `status` ACTIVE/HIDDEN/DELETED, `is_edited`, 자동 검사 `review_status` PENDING/APPROVED·`review_reason`·`held_at`(D-133) |
 | `post_likes` | 좋아요 | BRD-06, 6.5 | 회원·글 UNIQUE |
 | `post_views` | 조회 기록 | BRD-11, D-77 | `viewer_key`(회원 번호 또는 IP+브라우저 해시), `view_date`. 같은 사람·같은 날·같은 글 UNIQUE |
 
@@ -141,6 +141,18 @@ PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED
                                                 메인 프로필 신고: NO_ISSUE | WARNED | PROFILE_RESET | ACCOUNT_SUSPENDED (D-99)
                                                 블로그장 정지 중이고 부블로그장 없는 블로그의 신고: NO_ISSUE | WARNED | SUSPENDED | KICKED (D-100, D-114)
 ```
+
+### 댓글 자동 검사 (`comments.status`, `comments.review_status`, D-133)
+
+```text
+ACTIVE(review NULL) ──저장 뒤 검사가 수상하다고 봄──▶ HIDDEN + PENDING  (댓글 수에서 뺌, 블로그장·글 관리 부블로그장에게 알림, 쓴 사람에게는 그대로 보임)
+HIDDEN + PENDING ──승인(블로그장·글 관리 부블로그장·메인 관리자)──▶ ACTIVE + APPROVED  (댓글 수에 더함)
+HIDDEN + PENDING ──삭제(같은 사람들, 또는 쓴 사람)──▶ DELETED
+ACTIVE(NULL·APPROVED) ──쓴 사람이 고친 내용이 다시 수상함──▶ HIDDEN + PENDING
+```
+
+- 검사 실패·시간 초과·키 없음·횟수 초과면 ACTIVE 그대로(fail-open). 블로그장·부블로그장·메인 관리자의 댓글은 검사하지 않는다.
+- 관리자 숨김(ADM-03)은 HIDDEN + review NULL(또는 APPROVED)이라 자동 검사로 숨긴 댓글과 구분된다. 옛 버전 서버는 HIDDEN + PENDING을 관리자 숨김처럼 모두에게서 뺀다.
 
 ## 검증 규칙 (서버에서 검사)
 
