@@ -4,7 +4,7 @@
 CREATE TABLE users (
   id BIGINT NOT NULL AUTO_INCREMENT COMMENT '번호',
   email VARCHAR(100) NULL COMMENT '로그인 아이디. 소문자로 저장. 탈퇴 즉시 NULL (같은 이메일로 바로 재가입)',
-  password_hash VARCHAR(100) NOT NULL COMMENT 'bcrypt 해시',
+  password_hash VARCHAR(100) NULL COMMENT 'bcrypt 해시. 소셜 로그인으로만 가입해 비밀번호가 없으면 NULL (D-128)',
   name VARCHAR(30) NULL COMMENT '이름. 바꿀 수 없음. 탈퇴 30일 뒤 NULL',
   nickname VARCHAR(12) NULL COMMENT '2~12자. 탈퇴 30일 뒤 NULL',
   phone VARCHAR(11) NULL COMMENT '숫자만. 1차는 중복 허용. 탈퇴 30일 뒤 NULL',
@@ -64,6 +64,19 @@ CREATE TABLE refresh_tokens (
   CONSTRAINT fk_refresh_tokens_user_id FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Refresh Token';
 
+CREATE TABLE user_social_accounts (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT '번호',
+  user_id BIGINT NOT NULL COMMENT '연결된 회원',
+  provider ENUM('GOOGLE','GITHUB') NOT NULL COMMENT '소셜 로그인 제공자',
+  provider_user_id VARCHAR(100) NOT NULL COMMENT '제공자의 회원 번호 (구글 sub, 깃허브 id). 이메일이 바뀌어도 그대로',
+  email_at_link VARCHAR(100) NULL COMMENT '연결할 때 제공자가 확인해 준 이메일 (소문자). 기록용',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '연결한 시각',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_user_social_accounts_provider_user (provider, provider_user_id),
+  UNIQUE KEY uk_user_social_accounts_user_provider (user_id, provider),
+  CONSTRAINT fk_user_social_accounts_user_id FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='소셜 로그인 연결 (회원당 제공자별 하나)';
+
 CREATE TABLE blogs (
   id BIGINT NOT NULL AUTO_INCREMENT COMMENT '번호',
   owner_id BIGINT NOT NULL COMMENT '블로그장 (blog_members의 OWNER와 같은 사람)',
@@ -72,7 +85,7 @@ CREATE TABLE blogs (
   description VARCHAR(500) NULL COMMENT '소개',
   cover_image VARCHAR(255) NULL COMMENT '대표 이미지 경로. 블로그장이 올린 이미지, 올리지 않은 새 블로그는 Claude가 그려 걸러 낸 SVG (D-126)',
   mascot VARCHAR(40) NULL COMMENT '마스코트 픽셀 그림 조합 바탕.색.모자.장식 (예: bear.mint.beret.heart). 바탕은 동물 10종·물건 8종. 다른 블로그와 겹치지 않게 만든다. NULL이면 아직 안 만듦 (D-116, D-118)',
-  cover_scene VARCHAR(60) NULL COMMENT '대표 이미지가 없을 때 보여 줄 픽셀 장면 장면.시간.날씨.색.배치번호 (예: study.night.rain.mint.4821). 배치 번호는 만들 때마다 새로 뽑는다. NULL이면 아직 안 만듦 (D-119)',
+  cover_scene VARCHAR(60) NULL COMMENT '대표 이미지가 없을 때 보여 줄 픽셀 장면 장면.시간.날씨.색.배치번호, 뒤에 소품 주제와 섞기 모드 배경~계절을 붙일 수 있음 (예: study.night.rain.mint.4821, bedroom.night.clear.dusk.4821.-.sea~xmas). 배치 번호는 만들 때마다 새로 뽑는다. NULL이면 아직 안 만듦 (D-119, D-129)',
   visibility ENUM('PUBLIC','LINK_ONLY','PRIVATE') NOT NULL DEFAULT 'PUBLIC' COMMENT '공개 / 일부 공개 / 비공개',
   share_key VARCHAR(64) NULL COMMENT '일부 공개 공유 링크의 무작위 값. 새로 만들면 이전 값 무효',
   join_policy ENUM('OPEN','APPROVAL') NOT NULL DEFAULT 'OPEN' COMMENT '자유 참여 / 승인제',

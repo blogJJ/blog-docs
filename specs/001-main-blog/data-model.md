@@ -2,7 +2,7 @@
 
 **Feature**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md)
 
-기준은 [erd_tables.sql](../../docs/02-database/schema/erd_tables.sql)(MySQL 8, InnoDB, utf8mb4)이고, 같은 내용을 표와 관계도로 정리한 원문은 [요구사항분석서 3 · DB 설계(ERD)](../../docs/02-database/요구사항분석서_3_DB설계_ERD.pdf)입니다(테이블 33개, 관계 65개, D-84, D-99). 이 문서는 테이블을 요구사항과 연결하고 상태 전이와 검증 규칙을 정리합니다. 컬럼 하나하나의 정의와 한글 이름은 SQL 파일과 [erdcloud_names.md](../../docs/02-database/erdcloud/erdcloud_names.md)를 보세요. 조회용 인덱스는 [add_indexes.sql](../../docs/02-database/schema/add_indexes.sql)에 있습니다(나중에 추가).
+기준은 [erd_tables.sql](../../docs/02-database/schema/erd_tables.sql)(MySQL 8, InnoDB, utf8mb4)이고, 같은 내용을 표와 관계도로 정리한 원문은 [요구사항분석서 3 · DB 설계(ERD)](../../docs/02-database/요구사항분석서_3_DB설계_ERD.pdf)입니다(테이블 34개, 관계 66개, D-84, D-99, D-128). 이 문서는 테이블을 요구사항과 연결하고 상태 전이와 검증 규칙을 정리합니다. 컬럼 하나하나의 정의와 한글 이름은 SQL 파일과 [erdcloud_names.md](../../docs/02-database/erdcloud/erdcloud_names.md)를 보세요. 조회용 인덱스는 [add_indexes.sql](../../docs/02-database/schema/add_indexes.sql)에 있습니다(나중에 추가).
 
 테이블이나 컬럼을 바꾸면 `erd_tables.sql` → `erdcloud_import.sql` → `erdcloud_names.md` → 이 문서 순서로 같이 고칩니다.
 
@@ -14,22 +14,23 @@
 - 인증번호·토큰·블랙리스트 개인정보는 원문 대신 해시로 저장한다.
 - 개수 컬럼(`member_count`, `post_count`, `like_count` 등)은 정렬·표시용 캐시다.
 
-## 엔티티 목록 (33개)
+## 엔티티 목록 (34개)
 
 ### 회원·인증
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `users` | 회원 | USR-01~08, SEC-01~03, ADM-08 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 일반 회원 활동을 모두 하고 블로그 개수 제한이 없음. 직접 만들거나 참여한 블로그에서만 `blog_members`에 들어가고, 그 밖의 모든 블로그에서도 블로그장과 같은 관리 권한(남의 블로그 위임 제외)을 가짐, D-122), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각, `suspended_until`(메인 관리자 계정 정지, 영구는 9999-12-31, D-99) |
+| `users` | 회원 | USR-01~09, SEC-01~03, ADM-08 | `email`(소문자, UNIQUE, 탈퇴 즉시 NULL), `password_hash`(bcrypt, 소셜 로그인으로만 가입하면 NULL이고 그 회원의 이메일·비밀번호 로그인은 비밀번호 틀림과 같음, D-128), `name`(변경 불가), `nickname`(2~12자, UNIQUE), `phone`(숫자만, 1차 중복 허용), `role` USER/ADMIN(ADMIN은 일반 회원 활동을 모두 하고 블로그 개수 제한이 없음. 직접 만들거나 참여한 블로그에서만 `blog_members`에 들어가고, 그 밖의 모든 블로그에서도 블로그장과 같은 관리 권한(남의 블로그 위임 제외)을 가짐, D-122), `status` ACTIVE/WITHDRAWN, `login_fail_count`·`locked_until`(5회 5분 잠금), `notification_keep_days` 30/7, 약관·개인정보 동의 시각, `suspended_until`(메인 관리자 계정 정지, 영구는 9999-12-31, D-99) |
 | `verification_codes` | 이메일 인증번호 | USR-02, USR-06 | 회원 번호 대신 `email` 기준. `purpose` SIGNUP(10분)/PASSWORD_RESET(30분), `code_hash`, `fail_count`(5번 무효), `verified_at`, `used_at`(1회용) |
 | `account_find_tokens` | 이메일 찾기 임시 토큰 | USR-08 | `token_hash`, 10분 만료 |
 | `refresh_tokens` | Refresh Token | SEC-04, USR-04 | `token_hash`, `remember_me`(14일/30분), `user_agent`, `revoked_at`(로그아웃·비밀번호 변경) |
+| `user_social_accounts` | 소셜 로그인 연결 | USR-09, USR-05 | `provider` GOOGLE/GITHUB, `provider_user_id`(구글 sub, 깃허브 id. 이메일이 바뀌어도 그대로), `email_at_link`(연결할 때 제공자가 인증한 이메일, 기록용). (`provider`, `provider_user_id`) UNIQUE로 한 소셜 계정은 한 회원에게만, (`user_id`, `provider`) UNIQUE로 회원당 제공자별 하나. 비밀번호가 없으면 마지막 연결은 못 지움. 탈퇴하면 모두 지움 (D-128) |
 
 ### 블로그
 
 | 테이블 | 한글 | 주요 요구사항 | 핵심 컬럼·규칙 |
 | --- | --- | --- | --- |
-| `blogs` | 블로그 | BLG-01~03, 09, 10, 14, 15, ADM-02 | `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL, D-86), `cover_image`(블로그장이 올린 이미지, 올리지 않은 새 블로그는 Claude가 그려 걸러 낸 SVG, 지우면 NULL, D-126), `mascot`(픽셀 그림 조합 `바탕.색.모자.장식`, 바탕은 동물 10종·물건 8종, 다른 블로그와 겹치지 않음, NULL이면 아직 안 만듦, D-116, D-118), `cover_scene`(대표 이미지가 없을 때의 픽셀 장면 `장면.시간.날씨.색.배치번호`, NULL이면 아직 안 만듦, D-119), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`(일부 공개 링크 무작위 값), `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at` |
+| `blogs` | 블로그 | BLG-01~03, 09, 10, 14, 15, ADM-02 | `slug`(3~30자, UNIQUE, 폐쇄 30일 뒤 NULL, D-86), `cover_image`(블로그장이 올린 이미지, 올리지 않은 새 블로그는 Claude가 그려 걸러 낸 SVG, 지우면 NULL, D-126), `mascot`(픽셀 그림 조합 `바탕.색.모자.장식`, 바탕은 동물 10종·물건 8종, 다른 블로그와 겹치지 않음, NULL이면 아직 안 만듦, D-116, D-118), `cover_scene`(대표 이미지가 없을 때의 픽셀 장면 `장면.시간.날씨.색.배치번호`, 뒤에 소품 주제 `.주제`와 섞기 모드 `.배경~계절`을 붙일 수 있음, NULL이면 아직 안 만듦, VARCHAR(60), D-119, D-129, D-132), `visibility` PUBLIC/LINK_ONLY/PRIVATE, `share_key`(일부 공개 링크 무작위 값), `join_policy` OPEN/APPROVAL, `status` ACTIVE/CLOSING/CLOSED, `is_hidden`, `close_scheduled_at`, `close_reason` OWNER/OWNER_DEMOTED/ADMIN, `closed_at` |
 | `blog_members` | 블로그 멤버 | BLG-04~08, 13, SEC-07 | `role` OWNER/MANAGER/MEMBER, `manager_since`(자동 위임 순서), `suspended_until`(영구는 9999-12-31), `suspension_count`(3번이면 표시) |
 | `blog_manager_permissions` | 부블로그장 권한 | 2장, D-71 | `permission` EDIT_INFO/MANAGE_MEMBERS/MANAGE_POSTS |
 | `blog_join_requests` | 참여 신청 | BLG-04, 05 | `status` PENDING/APPROVED/REJECTED/CANCELED, `handled_at`(거절 7일 뒤 재신청 기준) |
@@ -128,6 +129,7 @@ MEMBER/MANAGER ──블로그 탈퇴(그 블로그에서 정지 중이면 불�
 ```text
 ACTIVE ──탈퇴(운영 중·폐쇄 예정 블로그 없음)──▶ WITHDRAWN
   email 즉시 NULL (같은 이메일로 바로 재가입 가능)
+  user_social_accounts 즉시 삭제 (같은 소셜 계정으로 새로 가입 가능, D-128)
   30일 뒤 name·nickname·phone·profile_image NULL, 글은 "탈퇴한 회원"
 ```
 
@@ -156,7 +158,7 @@ PENDING ──관리자 처리(handler_scope = ADMIN)──▶ NO_ISSUE | WARNED
 | 태그 | 1~20자, 한글·영문·숫자·`_`, 글·블로그 하나에 10개, 영문 소문자 | 6.4, D-88 |
 | 이미지 | jpg·jpeg·png·gif·webp, 장당 3MB, 글 하나에 10장(10MB), 확장자·MIME·시그니처 확인, EXIF 제거 | 6.3 |
 | 마스코트 | 바탕은 동물 bear, cat, dog, rabbit, fox, penguin, bird, frog, hamster, owl과 물건 computer, camera, book, plane, headphones, gamepad, coffee, cake 중 하나, 색은 original·pastel·mint·berry·sky·cocoa, 모자는 none·beret·party·crown·flower·bow·sprout·beanie, 장식은 none·heart·star·note·sparkle·leaf. `bear.mint.beret.heart`처럼 점으로 이어 저장. 목록에 없는 답은 버리고 태그 단어 사전·기본값으로. 폐쇄되지 않은 다른 블로그나 이 블로그의 지금 값과 같으면 같은 바탕 안의 다른 조합으로 바꿈 | BLG-14, D-116, D-118 |
-| 픽셀 장면 | 장면은 study, desk, kitchen, cafe, sky, stage, photo, game, park, bakery, sea, snowfield, garden, night-city, 시간은 dawn·day·sunset·night, 날씨는 clear·cloudy·rain·snow·petals·leaves, 색은 warm·mint·berry·dusk·cream, 배치 번호는 0~99999. 배치 번호는 저장할 때마다 새로 뽑고 지금 번호와 같으면 다시 뽑음 | BLG-15, D-119 |
+| 픽셀 장면 | 장면은 study, desk, kitchen, cafe, sky, stage, photo, game, park, bakery, sea, snowfield, garden, night-city, library, rooftop, campsite, mountain, train, aquarium, atelier, workshop, flower-shop, observatory, bedroom, street-market, riverside, greenhouse, laundromat, classroom, gym, record-shop, convenience, office, subway, bus-stop, hanok, farm, space-station, pojangmacha(40가지), 시간은 dawn·day·sunset·night, 날씨는 clear·cloudy·rain·snow·petals·leaves, 색은 warm·mint·berry·dusk·cream·ocean·forest·pastel, 배치 번호는 0~99999. 여섯째 칸 소품 주제(선택)는 cat·dog·bird·plant·flower·book·coffee·music·art·sport·food·star·travel·game·code. 일곱째 칸(섞기 모드)은 `배경~계절`이고 주제가 없으면 여섯째 칸은 `-`, 배경·계절이 없으면 그쪽을 비움(`~bloom`, `desert~`). 배경은 hills·trees·city·street·sea·mount·snow·desert·space·autumn·sakura·rice·harbor·under·towers·aurora·jungle·tulip·canyon·lake·lava·falls·santo·mills·lilac·palms·storm·roofs·bridge·wheat·berg·bamboo·castle(33가지, D-132), 계절·행사는 bloom·sun·fall·frost·xmas·boo·bday·wet·flies. xmas·boo·bday는 태그에 있을 때만. 예: `bedroom.night.clear.dusk.4821.-.sea~xmas`, 가장 긴 값도 60자 이하. 배치 번호는 저장할 때마다 새로 뽑고 지금 번호와 같으면 다시 뽑음. 일곱째 칸이 없는 예전 값은 그대로 읽고 그림도 같음. 열린 블로그의 그런 값은 예약 작업이 한 번 섞기 모드 값으로 바꿈(D-132) | BLG-15, D-119, D-129, D-132 |
 | 검색어 | 2~20자, 공백·특수문자만이면 거부 | 6.1 |
 | 신고 | 같은 사람·같은 대상 2주에 한 번 | 6.5 |
 | 참여 신청 | 대기 중이면 불가, 거절 후 7일 | 6.5 |

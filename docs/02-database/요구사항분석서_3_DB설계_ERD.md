@@ -15,7 +15,7 @@
   - [소셜·알림](#소셜알림)
   - [시스템](#시스템)
 
-2026-10-06 기준 요구사항(3·4·6장)으로 다시 설계했습니다. MySQL 8, 테이블 33개, 관계 65개입니다. ERDCloud에 옮겨 그리기 쉽도록 테이블마다 컬럼 표를 두었고, 나중에 추가할 인덱스는 아래 메모에 따로 모았습니다.
+2026-10-06 기준 요구사항(3·4·6장)으로 다시 설계했습니다. MySQL 8, 테이블 34개, 관계 66개입니다(2026-10-12 소셜 로그인 연결 user_social_accounts 추가, D-128). ERDCloud에 옮겨 그리기 쉽도록 테이블마다 컬럼 표를 두었고, 나중에 추가할 인덱스는 아래 메모에 따로 모았습니다.
 
 - **표기**: PK = 기본키, FK = 외래키, UK = 중복 불가(UNIQUE). NULL 칸의 O는 비어 있어도 됨, X는 꼭 있어야 함.
 - **관계 선**: 모든 테이블이 자기 id를 PK로 쓰므로 ERDCloud에서는 모두 **비식별 관계(점선)** 로 그립니다. FK가 NULL 불가면 "1 : N 필수", NULL 가능이면 "0..1 : N 선택"입니다.
@@ -150,6 +150,7 @@ ERDCloud의 메모에 그대로 붙여 넣을 수 있게 글자로만 적었습�
 erDiagram
     users ||..o{ account_find_tokens : user_id
     users ||..o{ refresh_tokens : user_id
+    users ||..o{ user_social_accounts : user_id
     users ||..o{ blogs : owner_id
     blogs ||..o{ blog_members : blog_id
     users ||..o{ blog_members : user_id
@@ -245,12 +246,13 @@ erDiagram
     }
 ```
 
-**식별 관계와 비식별 관계**: 부모의 PK가 자식의 PK 안에 들어가면 식별 관계(실선), 자식의 일반 칸에만 들어가면 비식별 관계(점선)입니다. 이 ERD는 65개 모두 비식별입니다. 모든 테이블이 자기 id 하나를 PK로 쓰고(JPA에서 가장 간단), 다른 테이블이 id 하나로 가리킬 수 있으며, parent_id·handled_by처럼 비어 있을 수 있는 FK가 많기 때문입니다(식별 관계는 FK가 PK라 NULL이 될 수 없음). 식별 관계가 PK로 막아 주던 중복은 UNIQUE로 막습니다(예: blog_members의 (blog_id, user_id)). 한 테이블이 users를 여러 번 가리키는 경우(예: blog_blacklist의 user_id·registered_by·released_by)는 칸마다 다른 역할의 회원입니다.
+**식별 관계와 비식별 관계**: 부모의 PK가 자식의 PK 안에 들어가면 식별 관계(실선), 자식의 일반 칸에만 들어가면 비식별 관계(점선)입니다. 이 ERD는 66개 모두 비식별입니다. 모든 테이블이 자기 id 하나를 PK로 쓰고(JPA에서 가장 간단), 다른 테이블이 id 하나로 가리킬 수 있으며, parent_id·handled_by처럼 비어 있을 수 있는 FK가 많기 때문입니다(식별 관계는 FK가 PK라 NULL이 될 수 없음). 식별 관계가 PK로 막아 주던 중복은 UNIQUE로 막습니다(예: blog_members의 (blog_id, user_id)). 한 테이블이 users를 여러 번 가리키는 경우(예: blog_blacklist의 user_id·registered_by·released_by)는 칸마다 다른 역할의 회원입니다.
 
 | 부모 테이블 | 자식 테이블 | 연결 컬럼 (FK) | 식별 여부 | 관계 | 뜻 |
 |---|---|---|---|---|---|
 | users | account_find_tokens | user_id | 비식별 (점선) | 1 : N 필수 | 찾은 계정 |
 | users | refresh_tokens | user_id | 비식별 (점선) | 1 : N 필수 | 토큰 주인 |
+| users | user_social_accounts | user_id | 비식별 (점선) | 1 : N 필수 | 연결된 회원 (제공자별 하나) |
 | users | blogs | owner_id | 비식별 (점선) | 1 : N 필수 | 블로그장 (blog_members의 OWNER와 같은 사람) |
 | blogs | blog_members | blog_id | 비식별 (점선) | 1 : N 필수 | 블로그 |
 | users | blog_members | user_id | 비식별 (점선) | 1 : N 필수 | 회원 |
@@ -339,13 +341,13 @@ erDiagram
 
 ### 회원·인증
 
-#### users (회원) · USR-01\~08, SEC-01\~05, 4.5, 4.6
+#### users (회원) · USR-01\~09, SEC-01\~05, 4.5, 4.6
 
 | 컬럼 | 타입 | 키 | NULL | 기본값 | 설명 |
 |---|---|---|---|---|---|
 | id | BIGINT | PK | X | AUTO_INCREMENT | 번호 |
 | email | VARCHAR(100) | UK | O |  | 로그인 아이디. 소문자로 저장. 탈퇴 즉시 NULL (같은 이메일로 바로 재가입) |
-| password_hash | VARCHAR(100) |  | X |  | bcrypt 해시 |
+| password_hash | VARCHAR(100) |  | O |  | bcrypt 해시. 소셜 로그인으로만 가입해 비밀번호가 없으면 NULL (D-128) |
 | name | VARCHAR(30) |  | O |  | 이름. 바꿀 수 없음. 탈퇴 30일 뒤 NULL |
 | nickname | VARCHAR(12) | UK | O |  | 2\~12자. 탈퇴 30일 뒤 NULL |
 | phone | VARCHAR(11) |  | O |  | 숫자만. 1차는 중복 허용. 탈퇴 30일 뒤 NULL |
@@ -409,6 +411,21 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | revoked_at | DATETIME |  | O |  | 로그아웃·비밀번호 변경 때 폐기한 시각 |
 | created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 만든 시각 |
 
+#### user_social_accounts (소셜 로그인 연결) · USR-09, D-128
+
+| 컬럼 | 타입 | 키 | NULL | 기본값 | 설명 |
+|---|---|---|---|---|---|
+| id | BIGINT | PK | X | AUTO_INCREMENT | 번호 |
+| user_id | BIGINT | FK → users | X |  | 연결된 회원 |
+| provider | ENUM('GOOGLE','GITHUB') |  | X |  | 소셜 로그인 제공자 |
+| provider_user_id | VARCHAR(100) |  | X |  | 제공자의 회원 번호 (구글 sub, 깃허브 id). 이메일이 바뀌어도 그대로 |
+| email_at_link | VARCHAR(100) |  | O |  | 연결할 때 제공자가 확인해 준 이메일 (소문자). 기록용 |
+| created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 연결한 시각 |
+
+묶음 UNIQUE: uk_user_social_accounts_provider_user (provider, provider_user_id) 한 소셜 계정은 한 회원에게만, uk_user_social_accounts_user_provider (user_id, provider) 회원당 제공자별 하나
+
+로그인할 때는 제공자 회원 번호로 연결을 찾습니다. 연결이 없으면 제공자가 인증한 이메일로 가입된 회원을 찾아 연결하고, 없으면 가입 마무리 화면으로 보냅니다. 제공자 토큰은 저장하지 않습니다. 비밀번호가 없는 회원은 마지막 연결을 지울 수 없고, 탈퇴하면 연결을 모두 지웁니다.
+
 ### 블로그
 
 #### blogs (블로그) · BLG-01\~03, BLG-09\~10, BLG-14, ADM-02
@@ -422,7 +439,7 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | description | VARCHAR(500) |  | O |  | 소개 |
 | cover_image | VARCHAR(255) |  | O |  | 대표 이미지 경로. 블로그장이 올린 이미지, 올리지 않은 새 블로그는 Claude가 그려 걸러 낸 SVG (D-126) |
 | mascot | VARCHAR(40) |  | O |  | 마스코트 픽셀 그림 조합 바탕.색.모자.장식 (예: bear.mint.beret.heart). 바탕은 동물 10종·물건 8종. 다른 블로그와 겹치지 않게 만든다. NULL이면 아직 안 만듦 (D-116, D-118) |
-| cover_scene | VARCHAR(60) |  | O |  | 대표 이미지가 없을 때 보여 줄 픽셀 장면 장면.시간.날씨.색.배치번호 (예: study.night.rain.mint.4821). 배치 번호는 만들 때마다 새로 뽑는다. NULL이면 아직 안 만듦 (D-119) |
+| cover_scene | VARCHAR(60) |  | O |  | 대표 이미지가 없을 때 보여 줄 픽셀 장면 장면.시간.날씨.색.배치번호, 뒤에 소품 주제와 섞기 모드 배경~계절을 붙일 수 있음 (예: study.night.rain.mint.4821, bedroom.night.clear.dusk.4821.-.sea~xmas). 배치 번호는 만들 때마다 새로 뽑는다. NULL이면 아직 안 만듦 (D-119, D-129) |
 | visibility | ENUM('PUBLIC','LINK_ONLY','PRIVATE') |  | X | 'PUBLIC' | 공개 / 일부 공개 / 비공개 |
 | share_key | VARCHAR(64) | UK | O |  | 일부 공개 공유 링크의 무작위 값. 새로 만들면 이전 값 무효 |
 | join_policy | ENUM('OPEN','APPROVAL') |  | X | 'OPEN' | 자유 참여 / 승인제 |
