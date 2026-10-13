@@ -76,7 +76,7 @@ CREATE INDEX idx_admin_logs_target ON admin_action_logs (target_type, target_id)
 CREATE INDEX idx_admin_logs_created ON admin_action_logs (created_at);  -- 1년 지난 기록 삭제
 
 -- posts (게시글)
-CREATE INDEX idx_posts_blog ON posts (blog_id, status, created_at);  -- 블로그 글 목록 최신순 (BRD-02)
+CREATE INDEX idx_posts_blog ON posts (blog_id, status, created_at, like_count, author_id, author_hidden);  -- 블로그 글 목록 최신순 (BRD-02). 메인 피드·태그 검색도 이 인덱스만으로 고르고 정렬 (D-144)
 CREATE INDEX idx_posts_category ON posts (blog_id, category_id, status, created_at);  -- 카테고리별 목록
 CREATE INDEX idx_posts_author ON posts (author_id, status, created_at);  -- 팔로우 피드, 내 글
 CREATE INDEX idx_posts_feed ON posts (status, created_at);  -- 메인 피드 최신 글 (BRD-09)
