@@ -57,7 +57,7 @@ specs/001-main-blog/
 ├── data-model.md        # 테이블 34개, 상태 전이, 검증 규칙
 ├── quickstart.md        # (아직 없음) 코드 저장소가 생기면 실행·검증 절차
 ├── contracts/           # (아직 없음) API 명세
-└── tasks.md             # 구현 작업 169개 (/speckit-tasks)
+└── tasks.md             # 구현 작업 170개 (/speckit-tasks)
 
 docs/
 ├── 01-requirements/     # 요구사항분석서 1·2 PDF (근거 자료)
