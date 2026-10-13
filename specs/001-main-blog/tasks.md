@@ -347,6 +347,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T167 글쓰기 도우미: `src/main/java/com/blog/board/api/WritingAssistController.java`에 `POST /api/posts/assist/tags`(본문 앞 3,000자로 태그 후보 3~5개, 그 블로그에서 쓰던 태그 먼저, `TagNormalizer`(T043)로 정리, 이미 단 태그 제외), `POST /api/posts/assist/spelling`(본문 앞 5,000자, 후보 `{start,end,original,suggestion,reason}`을 글 안에서 찾은 것만 30개까지), `GET /api/posts/assist/config`(버튼 표시 여부)를 둔다. `WritingAssistService.java`는 그 블로그에 글을 쓸 수 있는 회원만 허용하고 회원별 횟수 제한(`app.writing-assist`: 태그 1분 5번·하루 60번, 맞춤법 1분 3번·하루 20번, 넘으면 429)을 건다. `ClaudeWritingClient.java`는 마스코트와 같은 키·모델로 구조화된 답을 받고(글은 구분 블록 안 데이터, 태그 20초·맞춤법 50초, 트랜잭션 밖), 키가 없거나 실패하면 태그는 `KeywordTagSuggester.java`(단어 세기)로, 맞춤법은 503(`ASSIST_UNAVAILABLE`). 서버는 아무것도 저장하지 않는다. 화면은 `static/post-edit.html`, `static/js/writing-assist.js`, `static/css/writing-assist.css`: 태그 칩을 눌러 추가, 맞춤법 후보를 하나씩 적용/무시, 키가 없으면 맞춤법 버튼을 숨김. 테스트: 가짜 서버로 답 읽기·실패·시간 초과, 권한, 횟수 제한, 글 밖 후보 버림, 키 없을 때 단어 세기 (BRD-12, BRD-04, D-140, D-141)
 - [ ] T168 비슷한 글 추천: `GET /api/posts/{id}/similar?limit=4`(1~8)를 `src/main/java/com/blog/main/api/SimilarPostController.java`에 만든다. `SimilarPostService.java`는 원래 글을 글 상세와 같은 규칙(BlogAccessService)으로 확인하고, 비회원이 볼 수 있는 글만 후보로(공개 블로그, 게시 중, 블로그 공지 아님, 폐쇄·숨김 아님), 보는 사람이 차단한 작성자는 꺼낼 때 뺀다. `SimilarPostRepository.java`는 태그마다 `idx_post_tags_tag`로 최근 100개, 제목은 `ft_posts_title`로 30개를 읽는다. `SimilarPostRanker.java`: 겹치는 태그(1 + ln(표본/태그 글 수)/2) + 제목 bigram Dice × 2, 주제 점수 0.3 미만 제외, 최신·인기 가산 각 최대 0.3, 다른 블로그 먼저 블로그당 2개, 같은 블로그는 채우기용, 동점이면 최근 글. 결과는 글마다 메모리에 5분(`app.similar-posts.cache-ttl`, 최대 5,000개). 화면은 `static/js/similar-posts.js`가 글 끝이 가까워지면(IntersectionObserver) 불러와 카드(그림·제목·발췌·블로그 이름)를 그리고, 없으면 숨긴다. 스키마 변경 없음. 테스트: 순위 규칙, 비공개·숨김·공지 글 제외, 차단 작성자 제외, 블로그당 2개 (BRD-13, SOC-05, D-142)
 - [ ] T169 마스코트 바탕 늘리기와 고르게 나누기: `src/main/java/com/blog/blog/domain/Mascot.java`에 동물 10종(PANDA, KOALA, PIG, SHEEP, DUCK, TURTLE, HEDGEHOG, WHALE, LION, MOUSE)과 물건 2종(PENCIL, PLANT)을 더해 30종으로 한다(가장 긴 값도 34자라 `blogs.mascot` VARCHAR(40) 그대로, Flyway 없음). `static/js/mascot.js`에 새 바탕 12종의 픽셀 그림·이름을 그리고 순서를 동물 20종 먼저로, `static/css/mascot.css`의 깜빡임 엇갈림을 맞추고, `static/js/pixel-cover.js`가 장면 안에 새 동물 10종을 그린다. `ClaudeMascotClient.java`의 구조화된 답에 어울리는 다른 바탕(최대 2개)을 더하고 안내문에 새 바탕을 적는다. `KeywordMascotPicker.java`는 태그·이름에 맞는 바탕을 모두 돌려주고(`matches`), 맞는 단어가 없으면 이름으로 정한 기본값부터 모든 바탕을 후보로 내며, 새 바탕의 단어와 `MascotService.scenesFor`의 어울리는 장면을 더한다. `MascotService.leastUsed`는 후보 중 폐쇄되지 않은 블로그가 가장 적게 쓰는 바탕을 고르고(같으면 앞 후보, 이 블로그의 지금 바탕은 세지 않음) 그 바탕 안에서 겹치지 않는 조합(T148)을 쓴다. 바탕별 수는 `BlogRepository.countMascotBases`(쿼리 하나, 바탕만 있는 예전 값도 셈)로 센다. `MascotService.rebalanceMascots`를 마스코트 채우기 예약 작업(ShedLock, 10분마다)에 붙여, 몫(열린 블로그 수 ÷ 30, 올림)을 넘는 바탕의 블로그(`BlogRepository.findOpenIdsByMascotBase`)를 단어 사전에 맞는 바탕, 없으면 동물 중 몫보다 적게 쓰는 바탕에서 가장 적게 쓰는 것으로 한 번에 50개까지 옮긴다. 옮길 곳이 없으면 그대로 두고, `blogs.mascot`만 바꾸며(색·모자·장식은 그대로 두되 겹치면 다른 조합) 장면·대표 이미지는 그대로, AI 호출 없음, 폐쇄 블로그 건너뜀. 테스트: `MascotBalanceTest`(덜 쓰인 바탕 고르기, 몫을 넘는 바탕 옮기기, 몇 번 돈 뒤 더 바뀌지 않는지, 장면·대표 이미지 그대로), `MascotDesignTest`(30종 저장값 읽기·길이), `ClaudeMascotClientTest`(다른 바탕 답 읽기), `KeywordMascotPickerTest`(맞는 바탕 모두), `MascotServiceTest` (BLG-14, D-143)
+- [ ] T170 테스트 커버리지를 소나 기준(줄+분기) 90% 넘게 올린다: `build.gradle`에 JaCoCo(HTML·XML 보고서)를 붙이고, 빈 곳이 큰 이미지 검사·변환, 신고·관리자, 위임·인증·블랙리스트·알림에 정책 규칙과 실패 경우를 확인하는 테스트를 더한다(값만 채우는 테스트는 쓰지 않음). 테스트로 찾은 버그를 같이 고친다: PNG 조각 길이 넘침(500), 대신 쓰는 길의 뒤집힌 사진 방향, 신고 당시 내용의 이모지 깨짐, 관리자 박탈 때 위임 요청 취소 (D-145, BLG-08, ADM-07, OPS-09)
 
 ---
 
@@ -433,7 +434,7 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 4. US6·US7·US8 → 계정 찾기, 소셜, 알림
 5. US9 → 메인 관리자
 6. Polish → 권한 통합 테스트 T127 등
-7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119), Claude가 그린 대표 그림 → T155 (D-126), 픽셀 장면 넓히기 → T158 (D-129), 무중단 배포 → T152 (D-120, D-131), 릴리즈 노트 → T156 (D-127), T159 (D-130), 메인 관리자 권한·위임 요청 취소 → T153~T154 (D-122~D-125), 소셜 로그인 → T157 (D-128), 댓글 자동 검사 → T166 (D-133), https·공유 카드·이미지·속도 → T160~T162, T164 (D-134~D-136, D-138), 운동 장면 → T163 (D-137), Git Flow → T165 (D-139), 글쓰기 도우미 → T167 (D-140, D-141), 비슷한 글 → T168 (D-142), 마스코트 바탕 늘리기·고르게 나누기 → T169 (D-143)
+7. 마스코트·화면 디자인 → T148~T151 (D-116~D-119), Claude가 그린 대표 그림 → T155 (D-126), 픽셀 장면 넓히기 → T158 (D-129), 무중단 배포 → T152 (D-120, D-131), 릴리즈 노트 → T156 (D-127), T159 (D-130), 메인 관리자 권한·위임 요청 취소 → T153~T154 (D-122~D-125), 소셜 로그인 → T157 (D-128), 댓글 자동 검사 → T166 (D-133), https·공유 카드·이미지·속도 → T160~T162, T164 (D-134~D-136, D-138), 운동 장면 → T163 (D-137), Git Flow → T165 (D-139), 글쓰기 도우미 → T167 (D-140, D-141), 비슷한 글 → T168 (D-142), 마스코트 바탕 늘리기·고르게 나누기 → T169 (D-143), 테스트 커버리지·박탈 때 위임 취소 → T170 (D-145)
 
 ### Parallel Team Strategy
 
@@ -447,14 +448,14 @@ US1만으로는 가입·로그인뿐이라 보여 줄 것이 없어서, P1 세 �
 
 ## Notes
 
-- 작업 수 169개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인·대표 그림·픽셀 장면 8, 무중단 배포·릴리즈 노트 3, 메인 관리자 권한·위임 요청 취소 2, 소셜 로그인 1, https·공유 카드·이미지·속도 4, Git Flow 1, 댓글 검사·글쓰기 도우미·비슷한 글 3)
+- 작업 수 170개 (Setup 8, Foundational 28, US1 13, US2 16, US3 15, US4 13, US5 10, US6 5, US7 11, US8 4, US9 12, Polish 12, 마스코트·화면 디자인·대표 그림·픽셀 장면 8, 무중단 배포·릴리즈 노트 3, 메인 관리자 권한·위임 요청 취소 2, 소셜 로그인 1, https·공유 카드·이미지·속도 4, Git Flow 1, 댓글 검사·글쓰기 도우미·비슷한 글 3, 테스트 커버리지 1)
 - T135~T147은 운영 요구사항(OPS, D-101~D-112)을 넣으며 뒤에 붙인 번호라 단계 안의 번호 순서와 실행 순서가 다를 수 있다. 단계는 각 작업이 놓인 Phase를 따른다
 - T148~T151은 블로그 마스코트(BLG-14, D-116, D-118), 화면 디자인(D-117), 기본 대표 픽셀 장면(BLG-15, D-119)을 정하며 Phase 13으로 붙였다
 - T153~T154는 메인 관리자 권한(D-122)과 위임 요청 취소·정지 중 탈퇴 불가(D-123~D-125)를 정하며 Phase 13 끝에 붙였다. T153은 T017·T018·T045·T116 뒤, T154는 T087·T093 뒤
 - T155(대표 그림, D-126)는 T151 바로 다음에, T156(릴리즈 노트, D-127)은 T152 바로 다음에 두어 번호와 놓인 순서가 다르다. T155는 T044·T151 뒤, T156은 T152 뒤
 - T157~T159는 소셜 로그인(D-128), 픽셀 장면 넓히기(D-129), 사이트 릴리즈 노트(D-130)를 서버에 넣은 뒤 기록했다. T158은 T155 다음에, T159는 T156 다음에, T157은 Phase 13 끝에 두었다. T156의 자동 번호 올리기는 T159가 바꿨다. 배포 중 DB 잠금 대기 제한(D-131)은 새 작업 없이 T152에 넣었다
 - T166(새 댓글 자동 검사, D-133)은 서버에 넣으며 기록했다. T067 뒤면 되고 Phase 13 끝 T157 다음에 두었다
-- T160~T165, T167~T169는 2026-10-13에 서버에 넣은 뒤 기록했다(https 고정 D-134, 공유 카드 D-135, 이미지 최적화 D-136, 운동 장면 D-137, 화면 빨리 띄우기 D-138, Git Flow D-139, 글쓰기 도우미 D-140·D-141, 비슷한 글 D-142, 마스코트 바탕 고르게 나누기 D-143). T163은 T158 다음에, 나머지는 Phase 13 끝에 번호 순서로 두어 T166이 T165와 T167 사이에 있다
+- T160~T165, T167~T169는 2026-10-13에 서버에 넣은 뒤 기록했다(https 고정 D-134, 공유 카드 D-135, 이미지 최적화 D-136, 운동 장면 D-137, 화면 빨리 띄우기 D-138, Git Flow D-139, 글쓰기 도우미 D-140·D-141, 비슷한 글 D-142, 마스코트 바탕 고르게 나누기 D-143). T170(테스트 커버리지, 박탈 때 위임 취소 D-145)도 2026-10-13. T163은 T158 다음에, 나머지는 Phase 13 끝에 번호 순서로 두어 T166이 T165와 T167 사이에 있다
 - 요구사항 ID(USR, BLG, SOC, BRD, ADM, SEC, SCL, OPS)와 결정 기록(D-번호)을 작업 끝에 적어 근거를 찾을 수 있게 했다
 - 테이블·컬럼을 바꿔야 하면 코드보다 먼저 이 저장소의 `erd_tables.sql`과 관련 파일을 고친다(CLAUDE.md)
 - 작업 하나나 묶음마다 커밋하고, Checkpoint에서 스토리를 따로 확인한다
