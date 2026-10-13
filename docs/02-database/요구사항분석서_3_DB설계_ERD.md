@@ -15,7 +15,7 @@
   - [소셜·알림](#소셜알림)
   - [시스템](#시스템)
 
-2026-10-06 기준 요구사항(3·4·6장)으로 다시 설계했습니다. MySQL 8, 테이블 34개, 관계 66개입니다(2026-10-12 소셜 로그인 연결 user_social_accounts 추가, D-128). ERDCloud에 옮겨 그리기 쉽도록 테이블마다 컬럼 표를 두었고, 나중에 추가할 인덱스는 아래 메모에 따로 모았습니다.
+2026-10-06 기준 요구사항(3·4·6장)으로 다시 설계했습니다. MySQL 8, 테이블 34개, 관계 66개입니다(2026-10-12 소셜 로그인 연결 user_social_accounts 추가, D-128. 2026-10-13 댓글 자동 검사 컬럼 comments.review_status·review_reason·held_at 추가, D-133). ERDCloud에 옮겨 그리기 쉽도록 테이블마다 컬럼 표를 두었고, 나중에 추가할 인덱스는 아래 메모에 따로 모았습니다.
 
 - **표기**: PK = 기본키, FK = 외래키, UK = 중복 불가(UNIQUE). NULL 칸의 O는 비어 있어도 됨, X는 꼭 있어야 함.
 - **관계 선**: 모든 테이블이 자기 id를 PK로 쓰므로 ERDCloud에서는 모두 **비식별 관계(점선)** 로 그립니다. FK가 NULL 불가면 "1 : N 필수", NULL 가능이면 "0..1 : N 선택"입니다.
@@ -119,6 +119,7 @@ ERDCloud의 메모에 그대로 붙여 넣을 수 있게 글자로만 적었습�
 [comments] 댓글
   - idx_comments_post (post_id, parent_id, created_at) : 글의 댓글·대댓글 순서대로
   - idx_comments_author (author_id, created_at) : 내 댓글
+  - idx_comments_review (review_status, held_at) : 블로그장 댓글 확인 목록 (D-133)
 
 [post_views] 조회 기록
   - idx_post_views_date (view_date) : 오래된 조회 기록 정리
@@ -737,6 +738,9 @@ user_id는 이 임시 토큰이 어느 회원 계정 것인지 가리킵니다. 
 | deleted_at | DATETIME |  | O |  | 삭제 시각 |
 | created_at | DATETIME |  | X | CURRENT_TIMESTAMP | 만든 시각 |
 | updated_at | DATETIME |  | X | CURRENT_TIMESTAMP | 고친 시각 (ON UPDATE) |
+| review_status | ENUM('PENDING','APPROVED') |  | O |  | 자동 검사 결과. PENDING은 숨기고 블로그장 확인 대기(status HIDDEN, 쓴 사람에게는 보임), APPROVED는 승인. 검사 안 했거나 문제없으면 NULL (D-133) |
+| review_reason | ENUM('SPAM','AD','ABUSE','PERSONAL_INFO','OTHER') |  | O |  | 자동 검사가 숨긴 이유 (D-133) |
+| held_at | DATETIME |  | O |  | 자동 검사가 숨긴 시각 (D-133) |
 
 #### post_likes (좋아요) · BRD-06, 6.5
 
