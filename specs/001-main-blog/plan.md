@@ -41,7 +41,7 @@
 | III. 개인정보는 필요한 만큼, 서버에서 가린다 | 수집 항목 4.6, 서버 마스킹 4.4, 관리자 전체 보기 기록(ADM-06), 30일 삭제 배치 4.5, 블랙리스트 해시 | ✅ |
 | IV. 서버를 늘려도 코드를 고치지 않는다 | 상태는 DB(SCL-01), `FileStorage`(SCL-02), ShedLock(SCL-03), 프록시 헤더는 설정으로 | ✅ |
 | V. 단순한 것을 고른다 | 폴링 알림, 볼 때마다 피드, DB 조회 기록, 서버 디스크 이미지, Gmail SMTP | ✅ |
-| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-132. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07, 팀원 검토까지 모두 해결) | ✅ |
+| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-142. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07, 팀원 검토까지 모두 해결) | ✅ |
 
 위반으로 정당화할 복잡도는 없다(Complexity Tracking 비움).
 
@@ -53,11 +53,11 @@
 specs/001-main-blog/
 ├── spec.md              # 요구사항 (요구사항분석서 1·2를 Spec Kit 형식으로)
 ├── plan.md              # 이 파일
-├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-132
+├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-142
 ├── data-model.md        # 테이블 34개, 상태 전이, 검증 규칙
 ├── quickstart.md        # (아직 없음) 코드 저장소가 생기면 실행·검증 절차
 ├── contracts/           # (아직 없음) API 명세
-└── tasks.md             # 구현 작업 159개 (/speckit-tasks)
+└── tasks.md             # 구현 작업 168개 (/speckit-tasks)
 
 docs/
 ├── 01-requirements/     # 요구사항분석서 1·2 PDF (근거 자료)
@@ -72,8 +72,8 @@ docs/
 src/main/java/.../
 ├── auth/          # USR-01~09, SEC-01~05, 13 (가입, 로그인, 소셜 로그인, JWT, 인증번호, 찾기)
 ├── blog/          # BLG-01~15 (블로그, 멤버, 참여, 위임, 폐쇄, 블랙리스트, 제재, 마스코트, 픽셀 장면)
-├── board/         # BRD-01~07, 11 (공통 게시판: 글, 댓글, 태그, 이미지, 조회수)
-├── main/          # BRD-08~10 (통합 검색, 메인 피드, 공지)
+├── board/         # BRD-01~07, 11, 12 (공통 게시판: 글, 댓글, 태그, 이미지, 조회수, 글쓰기 도우미)
+├── main/          # BRD-08~10, 13 (통합 검색, 메인 피드, 공지, 공유 미리보기, 비슷한 글)
 ├── social/        # SOC-01~06 (팔로우, 구독, 프로필, 알림, 차단, 신고)
 ├── admin/         # ADM-01~08
 ├── batch/         # 04:00 배치 (폐쇄, 알림, 30일 삭제) + ShedLock
@@ -84,7 +84,7 @@ src/main/resources/
 └── db/migration/  # Flyway SQL (docs/02-database/schema/erd_tables.sql에서 시작)
 ```
 
-**Structure Decision**: 단일 Spring Boot 프로젝트. 화면은 같은 서버의 정적 파일로 내려주고 글 상세만 og 태그를 서버가 채운다(D-66).
+**Structure Decision**: 단일 Spring Boot 프로젝트. 화면은 같은 서버의 정적 파일로 내려주고 메인·블로그·글 화면만 og·트위터 카드 태그를 서버가 채운다(D-66, D-135).
 
 ## 다음 단계
 
