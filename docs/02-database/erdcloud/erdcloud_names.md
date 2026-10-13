@@ -357,6 +357,9 @@ ERDCloud에서 테이블과 컬럼마다 **물리 이름 = 영어(DB에 실제�
 | deleted_at | 삭제 시각 |
 | created_at | 생성 시각 |
 | updated_at | 수정 시각 |
+| review_status | 자동 검사 결과 |
+| review_reason | 자동 검사 사유 |
+| held_at | 자동 검사 숨김 시각 |
 
 ## post_likes → 좋아요
 

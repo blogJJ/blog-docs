@@ -94,6 +94,7 @@ CREATE INDEX idx_post_images_orphan ON post_images (post_id, created_at);  -- �
 -- comments (댓글)
 CREATE INDEX idx_comments_post ON comments (post_id, parent_id, created_at);  -- 글의 댓글·대댓글 순서대로
 CREATE INDEX idx_comments_author ON comments (author_id, created_at);  -- 내 댓글
+CREATE INDEX idx_comments_review ON comments (review_status, held_at);  -- 블로그장 댓글 확인 목록 (D-133)
 
 -- post_views (조회 기록)
 CREATE INDEX idx_post_views_date ON post_views (view_date);  -- 오래된 조회 기록 정리

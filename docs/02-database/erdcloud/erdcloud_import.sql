@@ -299,7 +299,10 @@ CREATE TABLE `comments` (
 	`is_edited`	BOOLEAN	NOT NULL	DEFAULT FALSE	COMMENT '"수정됨" 표시',
 	`deleted_at`	DATETIME	NULL	COMMENT '삭제 시각',
 	`created_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '만든 시각',
-	`updated_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '고친 시각 (ON UPDATE)'
+	`updated_at`	DATETIME	NOT NULL	DEFAULT CURRENT_TIMESTAMP	COMMENT '고친 시각 (ON UPDATE)',
+	`review_status`	ENUM('PENDING', 'APPROVED')	NULL	COMMENT '자동 검사 결과. PENDING은 숨기고 블로그장 확인 대기(status HIDDEN, 쓴 사람에게는 보임), APPROVED는 승인. 검사 안 했거나 문제없으면 NULL (D-133)',
+	`review_reason`	ENUM('SPAM', 'AD', 'ABUSE', 'PERSONAL_INFO', 'OTHER')	NULL	COMMENT '자동 검사가 숨긴 이유 (D-133)',
+	`held_at`	DATETIME	NULL	COMMENT '자동 검사가 숨긴 시각 (D-133)'
 );
 
 CREATE TABLE `post_likes` (
