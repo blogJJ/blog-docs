@@ -26,13 +26,13 @@
 
 **Constraints**: 5초 넘는 요청은 중단하고 다시 시도 안내. 서버 메모리에 상태를 두지 않음(IP 요청 제한만 예외). 시간대는 Asia/Seoul. 1차에 Redis 없음. 설정은 local·prod 프로필로 나누고 비밀값은 환경변수로만 받음(OPS-11)
 
-**Scale/Scope**: 1차 서버 1대(앱 두 대), 테이블 34개, 요구사항 USR 9 · BLG 15 · SOC 6 · BRD 11 · ADM 8 · SEC 13 · SCL 3 · OPS 14
+**Scale/Scope**: 1차 서버 1대(앱 두 대), 테이블 34개, 요구사항 USR 9 · BLG 15 · SOC 6 · BRD 13 · ADM 8 · SEC 13 · SCL 3 · OPS 14
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[constitution.md](../../.specify/memory/constitution.md) v1.0.1 기준.
+[constitution.md](../../.specify/memory/constitution.md) v1.0.2 기준.
 
 | 원칙 | 확인 | 결과 |
 | --- | --- | --- |
@@ -41,7 +41,7 @@
 | III. 개인정보는 필요한 만큼, 서버에서 가린다 | 수집 항목 4.6, 서버 마스킹 4.4, 관리자 전체 보기 기록(ADM-06), 30일 삭제 배치 4.5, 블랙리스트 해시 | ✅ |
 | IV. 서버를 늘려도 코드를 고치지 않는다 | 상태는 DB(SCL-01), `FileStorage`(SCL-02), ShedLock(SCL-03), 프록시 헤더는 설정으로 | ✅ |
 | V. 단순한 것을 고른다 | 폴링 알림, 볼 때마다 피드, DB 조회 기록, 서버 디스크 이미지, Gmail SMTP | ✅ |
-| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-146. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07, 팀원 검토까지 모두 해결) | ✅ |
+| VI. 결정은 기록으로 남긴다 | research.md에 D-01~D-148. 요구사항분석서와 DB 설계 사이에 남은 차이 없음(Clarifications 2026-10-07, 팀원 검토까지 모두 해결) | ✅ |
 
 위반으로 정당화할 복잡도는 없다(Complexity Tracking 비움).
 
@@ -53,10 +53,10 @@
 specs/001-main-blog/
 ├── spec.md              # 요구사항 (요구사항분석서 1·2를 Spec Kit 형식으로)
 ├── plan.md              # 이 파일
-├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-146
+├── research.md          # 구현 방식 결정, 이중화 후보, 결정 기록 D-01~D-148
 ├── data-model.md        # 테이블 34개, 상태 전이, 검증 규칙
-├── quickstart.md        # (아직 없음) 코드 저장소가 생기면 실행·검증 절차
-├── contracts/           # (아직 없음) API 명세
+├── quickstart.md        # 로컬 실행·검증 절차, 성공 기준을 확인하는 테스트
+├── contracts/           # API 명세 (local /v3/api-docs의 openapi.json과 목록 README)
 └── tasks.md             # 구현 작업 171개 (/speckit-tasks)
 
 docs/
@@ -66,10 +66,10 @@ docs/
 
 ### Source Code
 
-이 저장소는 기획·설계 문서만 둔다. 코드는 별도 저장소에서 만들며, 그 저장소의 구조가 정해지면 이 절을 채운다. 요구사항 모듈 기준으로 아래처럼 나누는 것을 제안한다.
+이 저장소는 기획·설계 문서만 둔다. 코드는 [blogJJ/blog-server](https://github.com/blogJJ/blog-server)에 있고, 요구사항 모듈 기준으로 아래처럼 나눴다. 모듈마다 `domain/`(엔티티), `repository/`, `service/`, `api/`(컨트롤러·DTO)를 둔다.
 
 ```text
-src/main/java/.../
+src/main/java/com/blog/
 ├── auth/          # USR-01~09, SEC-01~05, 13 (가입, 로그인, 소셜 로그인, JWT, 인증번호, 찾기)
 ├── blog/          # BLG-01~15 (블로그, 멤버, 참여, 위임, 폐쇄, 블랙리스트, 제재, 마스코트, 픽셀 장면)
 ├── board/         # BRD-01~07, 11, 12 (공통 게시판: 글, 댓글, 태그, 이미지, 조회수, 글쓰기 도우미)
@@ -89,7 +89,7 @@ src/main/resources/
 ## 다음 단계
 
 1. 요구사항이 바뀌면 PDF와 함께 spec.md·research.md를 고친다. `/speckit-clarify`로 남은 모호한 곳을 더 찾을 수 있다. 남은 보류 항목은 이중화 기술(서버를 늘릴 때) 하나다.
-2. 코드 저장소 구조가 정해지면 `/speckit-plan`으로 이 문서의 Source Code 절과 `contracts/`(API 명세), `quickstart.md`를 채운다.
+2. `contracts/`(API 명세)와 `quickstart.md`는 blog-server main(v1.28.2) 기준으로 채웠다(T134). API가 바뀌면 local에서 `/v3/api-docs`를 다시 받아 바꾼다.
 3. [tasks.md](tasks.md)의 작업 순서대로 구현한다(MVP는 US1~US3). `contracts/`와 `quickstart.md`를 채운 뒤 `/speckit-analyze`로 스펙·계획·작업이 서로 맞는지 확인한다.
 
 ## Complexity Tracking

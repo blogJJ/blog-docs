@@ -59,7 +59,7 @@
 | `posts` | 게시글 | BRD-01, 02, 10 | `title` 1~30자, `content` 마크다운 TEXT(최대 5,000자는 서버에서 검사, D-92), `is_notice`, `status` PUBLISHED/HIDDEN/DELETED, `author_hidden`("탈퇴한 계정"), 개수 캐시, `deleted_by`·`deleted_at`. 메인 공지는 `main` 블로그의 글 |
 | `tags` | 태그 | BRD-04 | `name` 영문 소문자, 1~20자, UNIQUE |
 | `post_tags` | 글-태그 연결 | BRD-04 | `uk_post_tags`로 한 글 안 중복 방지 |
-| `post_images` | 글 이미지 | BRD-05, SEC-08 | `stored_name`(UUID), `original_name`(DB에만), `content_type`(올린 JPEG·PNG는 WebP로 바꿔 저장하므로 보통 `image/webp`, D-136), `size_bytes`(올린 파일 3MB 이하, 줄인 뒤 크기 저장), `sort_order`(첫 이미지가 공유 미리보기, D-135), 글 저장 전 업로드면 `post_id` NULL |
+| `post_images` | 글 이미지 | BRD-05, SEC-08 | `stored_name`(UUID), `original_name`(DB에만), `content_type`(올린 JPEG·PNG는 WebP로 바꿔 저장하므로 보통 `image/webp`, D-136), `size_bytes`(올린 파일 3MB 이하, 줄인 뒤 크기 저장), `sort_order`(첫 이미지가 공유 미리보기, D-135), 글 저장 전 업로드면 `post_id` NULL, `deleted_at`은 본문에서 뺀 시각. 뺀 지 30일, 어느 글에도 넣지 않고 올린 지 30일이 지나면 04:00 배치가 지움(D-147) |
 | `comments` | 댓글 | BRD-06 | `parent_id`(1단계), `reply_to_user_id`(@닉네임, D-87), `content` 1~500자, `status` ACTIVE/HIDDEN/DELETED, `is_edited`, 자동 검사 `review_status` PENDING/APPROVED·`review_reason`·`held_at`(D-133) |
 | `post_likes` | 좋아요 | BRD-06, 6.5 | 회원·글 UNIQUE |
 | `post_views` | 조회 기록 | BRD-11, D-77 | `viewer_key`(회원 번호 또는 IP+브라우저 해시), `view_date`. 같은 사람·같은 날·같은 글 UNIQUE |
