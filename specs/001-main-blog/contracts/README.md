@@ -1,6 +1,6 @@
 # API 명세 (contracts)
 
-서버 API 목록입니다. 원본은 [openapi.json](openapi.json)이고, blog-server를 local 프로필로 띄워 `/v3/api-docs`에서 받은 OpenAPI 3.1 명세입니다(D-112, T134). 기준은 2026-10-14 main(v1.28.2)이고 경로 116개, 요청 133개입니다.
+서버 API 목록입니다. 원본은 [openapi.json](openapi.json)이고, blog-server를 local 프로필로 띄워 `/v3/api-docs`에서 받은 OpenAPI 3.1 명세입니다(D-112, T134). 기준은 2026-10-14 main(v1.29.0)이고 경로 116개, 요청 133개입니다.
 
 - 다시 받는 법: local 프로필로 띄운 뒤 `curl -s http://localhost:8080/v3/api-docs > openapi.json`. 화면으로는 http://localhost:8080/swagger-ui.html 에서 봅니다(운영에서는 닫혀 있음, OPS-12).
 - 인증은 HttpOnly 쿠키(Access·Refresh Token)이고, 쓰기 요청에는 CSRF 헤더가 필요합니다. 오류 응답 모양과 code는 blog-server README의 "인증 / 오류"를 봅니다.
