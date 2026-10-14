@@ -11,7 +11,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 
 **Tests**: OPS-09(D-109)가 성공 기준 SC-002~SC-007, SC-009, SC-011을 자동 테스트로 확인하라고 정해, 그 테스트(T085, T127, T130, T141, T147)와 실제 MySQL로 도는 테스트 기반(T146)을 작업으로 넣었습니다. 기능별 단위 테스트는 따로 작업으로 두지 않았습니다.
 
-**진행 상황 (2026-10-14 코드 대조)**: 171개 중 163개 완료([x]). 바뀐 작업(T069, T148, T152, T156)은 바뀐 모습으로 끝나 완료로 표시했습니다. 남은 8개: T060(조회 기록을 엔티티 없이 SQL로 처리, 동작은 됨), T127(HTTP로 남의 블로그 접근 403 확인 테스트), T128(응답 DTO 점검 기록), T132(요청 제한 공유 저장소 전환 설정, D-146으로 보류), T134(contracts/·quickstart.md), T140(브라우저 확인 기록), T141(로그에 비밀값 없는지 확인), T147(응답 가리기 일괄 테스트).
+**진행 상황 (2026-10-14 코드 대조)**: 171개 중 166개 완료([x]). 바뀐 작업(T069, T148, T152, T156)은 바뀐 모습으로 끝나 완료로 표시했습니다. T127·T141·T147은 blog-server PR #71에서 테스트를 채웠습니다(T127의 부블로그장·정지 경우는 `BlogAuthzTest` 단위 테스트와 `BlogAuthzIntegrationTest`, T147의 나머지 기준은 `AccountFlowTest`·`PostFlowTest`·`ProdProfileTest`·`ProdSecretsCheckTest`). 남은 5개: T060(조회 기록을 엔티티 없이 SQL로 처리, 동작은 됨), T128(응답 DTO 점검 기록), T132(요청 제한 공유 저장소 전환 설정, D-146으로 보류), T134(contracts/·quickstart.md), T140(브라우저 확인 기록).
 
 **Organization**: 사용자 스토리(US1~US9)별로 나눠 스토리마다 따로 만들고 확인할 수 있게 했습니다.
 
@@ -308,7 +308,7 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 
 **Purpose**: 여러 스토리에 걸친 확인과 마무리
 
-- [ ] T127 블로그별 권한 통합 테스트를 `src/test/java/com/blog/security/BlogAuthzIntegrationTest.java`에 만든다: 블로그 A의 블로그장으로 블로그 B의 멤버 제재, 글 삭제, 정보 수정, 폐쇄를 호출하면 모두 403. 권한 없는 부블로그장, 그 블로그에서 정지된 멤버, 계정 정지된 블로그장도 거부(ADMIN의 관리 권한과 회원 활동은 T153에서 확인) (SEC-07, SC-002, plan.md)
+- [x] T127 블로그별 권한 통합 테스트를 `src/test/java/com/blog/security/BlogAuthzIntegrationTest.java`에 만든다: 블로그 A의 블로그장으로 블로그 B의 멤버 제재, 글 삭제, 정보 수정, 폐쇄를 호출하면 모두 403. 권한 없는 부블로그장, 그 블로그에서 정지된 멤버, 계정 정지된 블로그장도 거부(ADMIN의 관리 권한과 회원 활동은 T153에서 확인) (SEC-07, SC-002, plan.md)
 - [ ] T128 [P] 응답 개인정보 점검: 모든 API 응답 DTO를 `src/main/java/com/blog/**/api/` 기준으로 훑어 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지 확인하고, 비밀번호 칸이 어느 응답에도 없는지 확인한다 (SC-004, 4.4)
 - [x] T129 [P] 보안 헤더와 CSP를 실제 화면(Toast UI Editor, Turnstile 스크립트 포함)에서 확인하고 `src/main/java/com/blog/common/config/SecurityConfig.java`의 CSP를 맞춘다 (SEC-12)
 - [x] T130 [P] 동시 요청으로 공개 블로그 생성 제한이 지켜지는지 `src/test/java/com/blog/blog/BlogLimitConcurrencyTest.java`로 확인한다 (SC-006)
@@ -318,8 +318,8 @@ description: "메인블로그 플랫폼 구현 작업 목록"
 - [ ] T134 이 문서 저장소에 `specs/001-main-blog/quickstart.md`(실행·검증 절차)와 `specs/001-main-blog/contracts/`(local에서 받은 `/v3/api-docs` OpenAPI 명세, D-112)를 만들고 `/speckit-analyze`로 스펙·계획·작업이 맞는지 확인한다
 - [x] T139 DB 백업을 만든다: 서버의 `ops/backup/db-backup.sh`(mysqldump `--single-transaction` 전체 백업, 서버에 7일치 남기고 지난 파일 삭제, 그 계정만 읽기)와, 매일 03:00 Asia/Seoul(cron 18:00 UTC)에 서버에 ssh로 접속해 이 스크립트를 돌리고 받은 파일을 저장소 비밀값 `BACKUP_PASSPHRASE`로 AES-256 암호화해 Actions 아티팩트로 7일 보관하는 Backup 워크플로 `.github/workflows/backup.yml`, 복구 절차 `ops/backup/RESTORE.md`. 전날 백업으로 빈 DB를 복구해 `/actuator/health`가 UP인지 확인한다 (OPS-01, SC-010, D-101, D-121)
 - [ ] T140 [P] 지원 브라우저 확인: 가입, 로그인, 블로그 만들기, 글쓰기(Toast UI Editor), 글 상세, 알림 화면을 Windows·Mac Chrome, Mac Safari, Android Chrome, iPhone Safari 최신 버전에서 확인하고 깨지는 곳을 고친다 (OPS-06, D-106)
-- [ ] T141 [P] 오류·로그 점검: 없는 주소, 잘못된 입력, 일부러 낸 서버 오류의 응답과 화면에 스택 트레이스·SQL이 없는지 `src/test/java/com/blog/common/ErrorResponseTest.java`로 확인하고, 가입·로그인 실패·비밀번호 재설정을 한 번씩 한 뒤 로그 파일에 비밀번호·토큰·인증번호가 없는지 검색한다 (OPS-02, OPS-03, SC-009)
-- [ ] T147 [P] 남은 성공 기준 자동 테스트를 만든다: 가입·비밀번호 찾기 응답이 가입된 이메일과 없는 이메일에서 같은지(`src/test/java/com/blog/auth/AccountEnumerationTest.java`, SC-003), 회원·블로그·글 API 응답에 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지(`src/test/java/com/blog/common/MaskingResponseTest.java`, SC-004), 같은 사람이 같은 날 같은 글을 여러 번 열면 조회수가 1만 오르는지(`src/test/java/com/blog/board/ViewCountTest.java`, SC-007), prod 프로필에서 Swagger 주소가 404이고 로그인 쿠키에 Secure가 붙으며 JWT 비밀키가 없으면 서버가 뜨지 않는지(`src/test/java/com/blog/common/ProdProfileTest.java`, SC-011) (OPS-09, D-109)
+- [x] T141 [P] 오류·로그 점검: 없는 주소, 잘못된 입력, 일부러 낸 서버 오류의 응답과 화면에 스택 트레이스·SQL이 없는지 `src/test/java/com/blog/common/ErrorResponseTest.java`로 확인하고, 가입·로그인 실패·비밀번호 재설정을 한 번씩 한 뒤 로그 파일에 비밀번호·토큰·인증번호가 없는지 검색한다 (OPS-02, OPS-03, SC-009)
+- [x] T147 [P] 남은 성공 기준 자동 테스트를 만든다: 가입·비밀번호 찾기 응답이 가입된 이메일과 없는 이메일에서 같은지(`src/test/java/com/blog/auth/AccountEnumerationTest.java`, SC-003), 회원·블로그·글 API 응답에 권한 없는 사람에게 가리지 않은 이메일·전화번호가 없는지(`src/test/java/com/blog/common/MaskingResponseTest.java`, SC-004), 같은 사람이 같은 날 같은 글을 여러 번 열면 조회수가 1만 오르는지(`src/test/java/com/blog/board/ViewCountTest.java`, SC-007), prod 프로필에서 Swagger 주소가 404이고 로그인 쿠키에 Secure가 붙으며 JWT 비밀키가 없으면 서버가 뜨지 않는지(`src/test/java/com/blog/common/ProdProfileTest.java`, SC-011) (OPS-09, D-109)
 
 ## Phase 13: 블로그 마스코트와 화면 디자인 (D-116~D-119)
 
