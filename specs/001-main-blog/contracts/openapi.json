@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "JJ Blog API",
-    "version": "v1.28.2",
+    "version": "v1.29.0",
     "description": "local 프로필의 /v3/api-docs에서 받은 명세 (T134, D-112). 2026-10-14 blog-server main 기준"
   },
   "servers": [
@@ -5861,6 +5861,9 @@
             "format": "int64"
           },
           "title": {
+            "type": "string"
+          },
+          "excerpt": {
             "type": "string"
           },
           "authorId": {

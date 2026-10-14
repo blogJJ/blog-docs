@@ -1,6 +1,6 @@
 # Quickstart: 메인블로그 실행·검증
 
-blog-server(코드 저장소)를 내 컴퓨터에서 띄우고, 성공 기준(spec.md SC-001~SC-011)을 어떻게 확인하는지 정리했습니다. 기준은 2026-10-14 main(v1.28.2)입니다. 자세한 설정과 배포는 [blog-server README](https://github.com/blogJJ/blog-server#readme)에 있습니다.
+blog-server(코드 저장소)를 내 컴퓨터에서 띄우고, 성공 기준(spec.md SC-001~SC-011)을 어떻게 확인하는지 정리했습니다. 기준은 2026-10-14 main(v1.29.0)입니다. 자세한 설정과 배포는 [blog-server README](https://github.com/blogJJ/blog-server#readme)에 있습니다.
 
 ## 1. 준비
 
@@ -63,4 +63,4 @@ cp .env.example .env          # JWT_SECRET을 채운다 (예: openssl rand -base
 
 ## 6. 운영
 
-운영 사이트는 https://jj-blog.java21.net 입니다. main에 합치면 CI → Deploy(앱 두 대를 한 대씩 교체) → Release(릴리즈 노트 버전 태그) 순서로 자동으로 올라갑니다. 매일 03:00에 DB를 암호화해 백업합니다.
+운영 사이트는 https://jj-blog.java21.net 입니다. main에 합치면 CI → Deploy(앱 두 대를 한 대씩 교체) → Release(릴리즈 노트 버전 태그) 순서로 자동으로 올라갑니다. 매일 03:00에 DB를 암호화해 백업하고, 5분마다 사이트 상태를 확인해 응답이 없으면 blog-server 저장소에 `site-down` 이슈를 엽니다(D-150).
