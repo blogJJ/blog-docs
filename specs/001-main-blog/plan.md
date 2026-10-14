@@ -32,7 +32,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[constitution.md](../../.specify/memory/constitution.md) v1.0.0 기준.
+[constitution.md](../../.specify/memory/constitution.md) v1.0.1 기준.
 
 | 원칙 | 확인 | 결과 |
 | --- | --- | --- |
